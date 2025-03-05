@@ -2,8 +2,10 @@ import {
   Box,
   Button,
   Container,
+  Fade,
   MobileStepper,
   Typography,
+  Zoom,
 } from "@mui/material";
 import React, { useState } from "react";
 import onboarding1 from "@/assets/onboarding1.png";
@@ -27,11 +29,30 @@ const OnboardingPage = () => {
         marginTop: 5,
       }}
     >
-      <Box
-        component="img"
-        src={activeStep == 0 ? onboarding1 : onboarding2}
-        height={400}
-      />
+     {activeStep === 0 && ( <Zoom in={activeStep === 0} timeout={500}>
+        <Box
+          component="img"
+          src={onboarding1}
+          height={400}
+          sx={{
+            top: 0,
+          }}
+        />
+      </Zoom>)}
+      {activeStep === 1 && (
+        <Zoom in={activeStep === 1} timeout={500}>
+          <Box
+            component="img"
+            src={onboarding2}
+            height={400}
+            sx={{
+              position: "relative", // Overlap images
+              top: 0,
+              left: 0,
+            }}
+          />
+        </Zoom>
+      )}
       <MobileStepper
         variant="dots"
         steps={totalSteps}
