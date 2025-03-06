@@ -87,7 +87,7 @@ const SignupPage = () => {
               autoComplete="email"
               placeholder="Phone number"
             />
-            
+
             <OutlinedInput
               fullWidth
               margin="normal"
@@ -121,9 +121,16 @@ const SignupPage = () => {
           </form>
           <Typography>
             Already have an account?{" "}
-            <Link>
+            <a
+              href="#"
+              style={{
+                color: "white",
+                textDecorationLine: "none",
+                fontWeight: 600,
+              }}
+            >
               <strong color="secondary">Sign&nbsp;in</strong>
-            </Link>{" "}
+            </a>{" "}
           </Typography>
         </Grid2>
         <Grid2 size={1} display="flex" justifyContent="center">
