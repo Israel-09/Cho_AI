@@ -29,7 +29,7 @@ const SignupPage = () => {
   });
   const [showPassowrd, setShowPassword] = useState(false);
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const handleClickShowPassword = () => setShowPassword((show) => !show);
 
@@ -55,11 +55,12 @@ const SignupPage = () => {
           alignItems: "center",
           width: "100%",
           justifyContent: "center",
+          flexDirection: isMobile ? "column" : "row",
         }}
         container
         gap={1}
       >
-        <Grid2 size={5}>
+        <Grid2 size={isMobile ? 12 : 5}>
           <form>
             <TextField
               fullWidth
@@ -133,11 +134,16 @@ const SignupPage = () => {
             </a>{" "}
           </Typography>
         </Grid2>
-        <Grid2 size={1} display="flex" justifyContent="center">
+        <Grid2
+          size={1}
+          display="flex"
+          justifyContent="center"
+          marginY={isMobile ? 3 : 1}
+        >
           <Typography>OR</Typography>
         </Grid2>
         <Grid2
-          size={5}
+          size={isMobile ? 12 : 5}
           sx={{ display: "flex", flexDirection: "column", gap: 3 }}
         >
           <Button
