@@ -22,7 +22,7 @@ const SlashPage = () => {
   }, []);
 
   if (shouldRedirect) {
-    return <Navigate to="/onboarding" />;
+    return <Navigate to="/onboarding" replace={false} />;
   }
 
   return (
@@ -35,9 +35,9 @@ const SlashPage = () => {
         justifyContent: "center",
         animation: isExiting ? "fadeOut 20s ease" : "none",
       }}
-      maxWidth="1024px"
+      maxWidth="xs"
     >
-      <Typography variant="h1" sx={{ fontWeight: "700", fontSize: "3rem" }}>
+      <Typography variant="h1" sx={{ fontWeight: "700", fontSize: "2rem" }}>
         ASKCHO.AI
       </Typography>
       <LinearProgress

@@ -6,6 +6,15 @@ const theme = createTheme({
     primary: {
       main: "#ffffff",
     },
+    secondary: {
+      main: "#fff",
+    },
+    action: {
+      focus: "#fff",
+    },
+    text: {
+      secondary: "#d3d3d3",
+    },
   },
   typography: {
     h1: {

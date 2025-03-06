@@ -29,16 +29,18 @@ const OnboardingPage = () => {
         marginTop: 5,
       }}
     >
-     {activeStep === 0 && ( <Zoom in={activeStep === 0} timeout={500}>
-        <Box
-          component="img"
-          src={onboarding1}
-          height={400}
-          sx={{
-            top: 0,
-          }}
-        />
-      </Zoom>)}
+      {activeStep === 0 && (
+        <Zoom in={activeStep === 0} timeout={500}>
+          <Box
+            component="img"
+            src={onboarding1}
+            width="80%"
+            sx={{
+              top: 0,
+            }}
+          />
+        </Zoom>
+      )}
       {activeStep === 1 && (
         <Zoom in={activeStep === 1} timeout={500}>
           <Box
