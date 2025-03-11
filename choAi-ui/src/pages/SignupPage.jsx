@@ -11,6 +11,8 @@ import {
   OutlinedInput,
   useTheme,
   useMediaQuery,
+  FormControl,
+  InputLabel,
 } from "@mui/material";
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
@@ -21,17 +23,25 @@ import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 
 const SignupPage = () => {
-  const [form, SetForm] = useState({
+  const [form, setForm] = useState({
     name: "",
     email: "",
     phone: "",
     password: "",
   });
-  const [showPassowrd, setShowPassword] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const handleClickShowPassword = () => setShowPassword((show) => !show);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setForm((prevState) => ({
+      ...prevState,
+      [name]: value,
+    }));
+  };
 
   return (
     <Container
@@ -89,29 +99,36 @@ const SignupPage = () => {
               placeholder="Phone number"
             />
 
-            <OutlinedInput
-              fullWidth
-              margin="normal"
-              type={showPassowrd ? "text" : "password"}
-              label="Password"
-              name="password"
-              placeholder="Password"
-              required
-              endAdornment={
-                <InputAdornment position="end">
-                  <IconButton
-                    aria-label={
-                      showPassowrd
-                        ? "hide the passoword"
-                        : "display the password"
-                    }
-                    onClick={handleClickShowPassword}
-                  >
-                    {showPassowrd ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                </InputAdornment>
-              }
-            />
+            {/* Password field in its own FormControl */}
+            <FormControl fullWidth margin="normal" variant="outlined">
+              <InputLabel htmlFor="password-input">Password</InputLabel>
+              <OutlinedInput
+                id="password-input"
+                type={showPassword ? "text" : "password"}
+                name="password"
+                placeholder="Password"
+                autoComplete="password"
+                required
+                value={form.password}
+                onChange={handleChange}
+                endAdornment={
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label={
+                        showPassword
+                          ? "hide the password"
+                          : "display the password"
+                      }
+                      onClick={handleClickShowPassword}
+                      edge="end"
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                }
+                label="Password"
+              />
+            </FormControl>
             <Button
               variant="contained"
               fullWidth
@@ -123,7 +140,7 @@ const SignupPage = () => {
           <Typography>
             Already have an account?{" "}
             <a
-              href="#"
+              href="/signin"
               style={{
                 color: "white",
                 textDecorationLine: "none",

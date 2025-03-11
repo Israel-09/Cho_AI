@@ -24,36 +24,38 @@ const OnboardingPage = () => {
       maxWidth="xs"
       sx={{
         display: "flex",
+        height: "100vh",
         alignItems: "center",
+        justifyContent: "center",
         flexDirection: "column",
         marginTop: 5,
       }}
     >
       {activeStep === 0 && (
-        <Zoom in={activeStep === 0} timeout={500}>
+        <Fade in={activeStep === 0} timeout={1000}>
           <Box
             component="img"
             src={onboarding1}
-            width="80%"
+            width="90%"
             sx={{
               top: 0,
             }}
           />
-        </Zoom>
+        </Fade>
       )}
       {activeStep === 1 && (
-        <Zoom in={activeStep === 1} timeout={500}>
+        <Fade in={activeStep === 1} timeout={1500}>
           <Box
             component="img"
             src={onboarding2}
-            height={400}
+            width="90%"
             sx={{
               position: "relative", // Overlap images
               top: 0,
               left: 0,
             }}
           />
-        </Zoom>
+        </Fade>
       )}
       <MobileStepper
         variant="dots"

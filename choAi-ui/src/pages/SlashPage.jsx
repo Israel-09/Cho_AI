@@ -1,6 +1,7 @@
-import { Container, LinearProgress, Typography } from "@mui/material";
+import { Box, Container, LinearProgress, Typography } from "@mui/material";
 import React, { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
+import logo from "@/assets/LOGO.png";
 
 const SlashPage = () => {
   const [shouldRedirect, setShouldRedirect] = useState(false);
@@ -37,9 +38,7 @@ const SlashPage = () => {
       }}
       maxWidth="xs"
     >
-      <Typography variant="h1" sx={{ fontWeight: "700", fontSize: "2rem" }}>
-        ASKCHO.AI
-      </Typography>
+      <Box component="img" src={logo} width={200} />
       <LinearProgress
         variant="indeterminate"
         sx={{

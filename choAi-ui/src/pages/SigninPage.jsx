@@ -85,6 +85,7 @@ const SigninPage = () => {
             name="password"
             placeholder="Password"
             required
+            autoComplete="password"
             value={credentials.password}
             onChange={handleChange}
             endAdornment={
@@ -110,7 +111,7 @@ const SigninPage = () => {
       <Typography color="text.secondary">
         Forgot Password?{" "}
         <a
-          href="#"
+          href="/reset-password"
           style={{
             color: "white",
             textDecorationLine: "none",
