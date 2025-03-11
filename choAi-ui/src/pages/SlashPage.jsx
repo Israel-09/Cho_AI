@@ -1,7 +1,7 @@
 import { Box, Container, LinearProgress, Typography } from "@mui/material";
 import React, { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
-import logo from "@/assets/LOGO.png";
+import logo from "@/assets/logo.png";
 
 const SlashPage = () => {
   const [shouldRedirect, setShouldRedirect] = useState(false);
