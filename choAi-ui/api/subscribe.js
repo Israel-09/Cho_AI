@@ -1,5 +1,5 @@
-const { createClient } = require("@supabase/supabase-js");
-const nodemailer = require("nodemailer");
+import { createClient } from "@supabase/supabase-js";
+import nodemailer from "nodemailer";
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
