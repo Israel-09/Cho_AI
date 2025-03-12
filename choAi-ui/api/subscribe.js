@@ -1,5 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
 import nodemailer from "nodemailer";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
