@@ -15,7 +15,6 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import supabase from "../superbaseClient";
 
 const expectations = [
   "SMART AI CHAT - Get instant, insightful responses.",
