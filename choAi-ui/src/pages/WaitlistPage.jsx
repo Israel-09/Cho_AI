@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 import logo from "@/assets/logo.png";
 import {
+  Alert,
   Box,
   Button,
   Container,
@@ -10,9 +11,11 @@ import {
   ListItemIcon,
   ListItemText,
   ListSubheader,
+  Snackbar,
   TextField,
   Typography,
 } from "@mui/material";
+import supabase from "../superbaseClient";
 
 const expectations = [
   "SMART AI CHAT - Get instant, insightful responses.",
@@ -36,7 +39,72 @@ const CheckIcon = () => {
     </svg>
   );
 };
+
 const WaitlistPage = () => {
+  const [email, setEmail] = useState("");
+  const [feedback, setFeedback] = useState({
+    message: "",
+    severity: "",
+  });
+  const [loading, setLoading] = useState(false);
+
+  const handleClose = () => {
+    setFeedback({ message: "", severity: "" });
+  };
+
+  const handleChange = (e) => {
+    setEmail(e.target.value);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (
+      !email ||
+      !email.match(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/)
+    ) {
+      setFeedback({
+        message: "Please enter a valid email address",
+        severity: "error",
+      });
+      return;
+    }
+    try {
+      setLoading(true);
+      const response = await fetch("/api/subscribe", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      if (response.ok) {
+        setFeedback({
+          message: "Thank you for subscribing!",
+          severity: "success",
+        });
+        setEmail("");
+      } else {
+        const errorData = await response.json();
+        if (response.status === 409) {
+          setFeedback({
+            message: "This email is already subscribed.",
+            severity: "error",
+          });
+        } else {
+          throw new Error(errorData.error || "Failed to subscribe");
+        }
+      }
+    } catch (err) {
+      setFeedback({
+        message: "There was an error subscribing. Please try again later.",
+        severity: "error",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Container
       maxWidth="sm"
@@ -57,15 +125,40 @@ const WaitlistPage = () => {
         conversations like never before!
       </Typography>
 
-      <TextField
-        fullWidth
-        label="Enter your email"
-        name="email"
-        autoComplete="email"
-        margin="normal"
-        sx={{ marginY: 4 }}
-      />
-      <Button variant="contained">Join the waitlist</Button>
+      <Box
+        component="form"
+        onSubmit={handleSubmit}
+        sx={{ display: "flex", flexDirection: "column", width: "100%" }}
+      >
+        {feedback.message && (
+          <Alert
+            severity={feedback.severity}
+            variant="outlined"
+            sx={{ width: "100%" }}
+            onClose={handleClose}
+          >
+            {feedback.message}
+          </Alert>
+        )}
+        <TextField
+          fullWidth
+          label="Enter your email"
+          name="email"
+          autoComplete="email"
+          margin="normal"
+          sx={{ marginY: 4 }}
+          value={email}
+          onChange={handleChange}
+        />
+        <Button
+          type="submit"
+          variant="contained"
+          disabled={loading ? true : false}
+          sx={{ textTransform: "none" }}
+        >
+          {loading ? "Subscribing..." : "Join the waitlist"}
+        </Button>
+      </Box>
       <Typography
         component="body2"
         variant="body2"

@@ -6,6 +6,7 @@ import theme from "./theme.js";
 import { ThemeProvider } from "@emotion/react";
 import { CssBaseline } from "@mui/material";
 
+
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <ThemeProvider theme={theme}>
