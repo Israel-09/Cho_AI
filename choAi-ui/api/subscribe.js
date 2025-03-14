@@ -17,7 +17,7 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-module.exports = async (req, res) => {
+const subscribe = async (req, res) => {
   if (req.method != "POST") {
     return res.status(405).json({ error: "Method Not Allowed" });
   }
@@ -46,3 +46,5 @@ module.exports = async (req, res) => {
     return res.status(500).json({ error: "Something went wrong" });
   }
 };
+
+export default subscribe;

@@ -16,6 +16,9 @@ const theme = createTheme({
       secondary: "#d3d3d3",
     },
   },
+  shape: {
+    borderRadius: "12px",
+  },
   typography: {
     h1: {
       fontFamily: '"Montserrat", "Roboto", "Helvetica", sans-serif',
@@ -23,7 +26,7 @@ const theme = createTheme({
     h2: {
       fontFamily: '"Montserrat", "Roboto", "Helvetica", sans-serif',
     },
-    fontFamily: '"Poppins", "Roboto", "Helvetica", sans-serif',
+    fontFamily: '"Public Sans", "Roboto", "Helvetica", sans-serif',
   },
 });
 
