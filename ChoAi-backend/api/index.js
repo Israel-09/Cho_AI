@@ -3,7 +3,6 @@ import { createClient } from "@supabase/supabase-js";
 import nodemailer from "nodemailer";
 import dotenv from "dotenv";
 import cors from "cors";
-
 // Load environment variables
 dotenv.config();
 
@@ -25,8 +24,8 @@ const transporter = nodemailer.createTransport({
 // Create Express app
 const app = express();
 
+app.cors(cors)
 app.use(express.json());
-app.use(cors());
 
 // Define POST route for subscription
 app.post("/subscribe", async (req, res) => {
@@ -64,3 +63,6 @@ app.post("/subscribe", async (req, res) => {
 
 // Start the server
 const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
