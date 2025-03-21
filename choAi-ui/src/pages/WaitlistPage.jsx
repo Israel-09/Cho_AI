@@ -32,6 +32,7 @@ const WaitlistPage = () => {
   };
 
   const handleSubmit = async (e) => {
+    setFeedback({ message: "", severity: "" });
     e.preventDefault();
     if (
       !email ||
@@ -45,13 +46,24 @@ const WaitlistPage = () => {
     }
     try {
       setLoading(true);
-      const response = await fetch("http://localhost:3000/api/subscribe", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email }),
-      });
+      const controller = new AbortController();
+      const timeout = 38000;
+
+      const timeoutId = setTimeout(() => {
+        controller.abort();
+      }, timeout);
+
+      const response = await fetch(
+        `${import.meta.env.VITE_ASKCHO_API_URL}/subscribe`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email }),
+          signal: controller.signal,
+        }
+      );
 
       if (response.ok) {
         alert("Thank you for subscribing");
@@ -133,33 +145,32 @@ const WaitlistPage = () => {
             backgroundColor: lightShade
               ? "rgba(255, 255, 255, 0.18)"
               : "rgba(211, 211, 211, 0.2)",
-            padding: isMobile ? "14px 32px" : "48px 48px",
+            padding: isMobile ? "14px 32px" : "32px 32px",
             borderRadius: "48px",
             border: "1px solid rgba(211, 211, 211, 1)",
-            backdropFilter: "blur(24px)",
+            backdropFilter: "blur(20px)",
           }}
         >
           <Typography
             component="h3"
             variant="h1"
-            sx={{ fontSize: isMobile ? "1.8rem" : "2.5rem", fontWeight: "500" }}
+            sx={{
+              fontSize: isMobile ? "1.8rem" : "3rem",
+              fontWeight: "500",
+              textAlign: "center",
+              marginBottom: "20px",
+              lineHeight: "40px",
+            }}
           >
-            Good things come <br />
-            to those{" "}
-            <span
-              style={{
-                fontFamily: '"David Libre"',
-                fontStyle: "italic",
-                fontWeight: "300",
-                fontSize: isMobile ? "2.5rem " : "3rem",
-              }}
-            >
-              who wait
-            </span>
+            Be among the first to experience groundbreaking AI
           </Typography>
           <Typography
             variant="h1"
-            sx={{ fontSize: "0.9rem", fontWeight: "400", textAlign: "center" }}
+            sx={{
+              fontSize: isMobile ? "0.9rem" : "1.2rem",
+              fontWeight: "400",
+              textAlign: "center",
+            }}
           >
             Join the waitlist. Be the first to know when we launch. Your future
             of AI insights starts here.
@@ -204,7 +215,7 @@ const WaitlistPage = () => {
           />
           <Typography
             variant="h1"
-            sx={{ fontSize: "0.7rem", marginTop: "5px" }}
+            sx={{ fontSize: "0.8rem", marginTop: "5px" }}
           >
             We respect your privacy. No spam, just updates
           </Typography>
