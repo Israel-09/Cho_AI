@@ -14,9 +14,11 @@ const supabase = createClient(
 
 // Set up Nodemailer transporter with corrected environment variable
 const transporter = nodemailer.createTransport({
-  service: "gmail",
+  host: "smtp.hostinger.com",
+  port: 465,
+  secure: true,
   auth: {
-    user: process.env.EMAIL_ADDRESS, // Fixed typo from process.eventNames.EMAIL_ADDRESS
+    user: process.env.EMAIL_ADDRESS,
     pass: process.env.EMAIL_PASSWORD,
   },
 });
@@ -46,10 +48,10 @@ app.post("/subscribe", async (req, res) => {
       }
       throw error;
     }
-
+    console.log("sending to", email);
     // Send confirmation email
     await transporter.sendMail({
-      from: process.env.EMAIL_ADDRESS, // Fixed typo from process.env.EAIL_ADDRESS
+      from: `ASKCHO-AI <${process.env.EMAIL_ADDRESS}>`,
       to: email,
       subject: "Thanks for Subscribing!",
       html: `
@@ -61,7 +63,7 @@ app.post("/subscribe", async (req, res) => {
             <title>Welcome to AskCho.ai</title>
         </head>
         <body>
-            <h1>Welcome to the inner circle!</h1>
+            <h4>Welcome to the inner circle!</h4>
             <p>We're thrilled to have you join the AskCho.ai waitlist. You're now one step closer to experiencing groundbreaking AI that's set to redefine how you interact with technology. You're not just signing up for a product; you're becoming part of a journey. By joining us, you'll also contribute to cutting-edge research and learning, helping shape the future of AI that will resonate across the world.</p>
             <p>The countdown has begun! Stay tuned for updates, sneak peeks, and exclusive content as we get closer to launch.</p>
             <p>In the meantime, spread the word! Share your excitement with friends and colleagues and let them know they don't want to miss out on this. They can join the waitlist <a href="https://askcho.ai/waitlist">here</a>.</p>
