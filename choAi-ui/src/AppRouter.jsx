@@ -1,5 +1,5 @@
 // AppRouter.js
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import SlashPage from "./pages/SlashPage";
 import OnboardingPage from "./pages/OnboardingPage";
 import SignupPage from "./pages/SignupPage";
@@ -10,11 +10,11 @@ import WaitlistPage from "./pages/WaitlistPage";
 function Router() {
   return (
     <Routes>
-      <Route path="/" element={<SlashPage />} />
-      <Route path="onboarding" element={<OnboardingPage />} />
+      <Route path="/" element={<Navigate to="/waitlist" replace={false}/>} />
+      {/* <Route path="onboarding" element={<OnboardingPage />} />
       <Route path="signup" element={<SignupPage />} />
       <Route path="signin" element={<SigninPage />} />
-      <Route path="reset-password" element={<ResetPasswordPage />} />
+      <Route path="reset-password" element={<ResetPasswordPage />} /> */}
       <Route path="waitlist" element={<WaitlistPage />} />
     </Routes>
   );
