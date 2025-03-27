@@ -4,6 +4,7 @@ import {
   Button,
   Container,
   InputAdornment,
+  Stack,
   TextField,
   Typography,
   useMediaQuery,
@@ -12,6 +13,11 @@ import {
 import React, { useEffect, useState } from "react";
 import wailistBackground from "@/assets/waitlist-background.png";
 
+const features = [
+  "Interlligent chats",
+  "Tailored responses",
+  "Insights you won't find anywhere else",
+];
 const WaitlistPage = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -143,7 +149,7 @@ const WaitlistPage = () => {
             justifyContent: "center",
             alignItems: "center",
             backgroundColor: lightShade
-              ? "rgba(255, 255, 255, 0.18)"
+              ? "rgba(255, 255, 255, 0.19)"
               : "rgba(211, 211, 211, 0.2)",
             padding: isMobile ? "14px 32px" : "32px 32px",
             borderRadius: "48px",
@@ -159,15 +165,25 @@ const WaitlistPage = () => {
               fontWeight: "500",
               textAlign: "center",
               marginBottom: "20px",
-              lineHeight: "40px",
+              lineHeight: isMobile ? "28px" : "40px",
             }}
           >
-            Be among the first to experience groundbreaking AI
+            <span style={{ fontFamily: '"David Libre" serif' }}>
+              Be among the first to experience{" "}
+            </span>
+            groundbreaking&nbsp;AI
           </Typography>
+          <Stack direction="row">
+            {features.map((feature, index) => (
+              <Typography key={index} variant="h1" sx={{ fontSize: "1rem" }}>
+                {feature}
+              </Typography>
+            ))}
+          </Stack>
           <Typography
             variant="h1"
             sx={{
-              fontSize: isMobile ? "0.9rem" : "1.2rem",
+              fontSize: isMobile ? "0.7rem" : "0.9rem",
               fontWeight: "400",
               textAlign: "center",
             }}
@@ -207,7 +223,7 @@ const WaitlistPage = () => {
               ),
             }}
             sx={{
-              marginTop: "15px",
+              marginTop: "5px",
               backgroundColor: "black",
               borderRadius: theme.shape.borderRadius,
               boxShadow: !lightShade && "0 4px 8px rgba(61, 61, 61, 1)",

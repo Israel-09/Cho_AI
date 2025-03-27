@@ -6,23 +6,12 @@ const theme = createTheme({
     primary: {
       main: "#ffffff",
     },
-    secondary: {
-      main: "#fff",
-    },
-    action: {
-      focus: "#fff",
-    },
-    text: {
-      secondary: "#d3d3d3",
-    },
-    background: {
-      default: "#050505",
-    },
   },
   shape: {
     borderRadius: "12px",
   },
   typography: {
+    fontWeightBold: 700,
     h1: {
       fontFamily: '"Montserrat", "Roboto", "Helvetica", sans-serif',
     },
