@@ -12,9 +12,10 @@ import {
 } from "@mui/material";
 import React, { useEffect, useState } from "react";
 import wailistBackground from "@/assets/waitlist-background.png";
+import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 
 const features = [
-  "Interlligent chats",
+  "Intelligent chats",
   "Tailored responses",
   "Insights you won't find anywhere else",
 ];
@@ -114,7 +115,6 @@ const WaitlistPage = () => {
         backgroundImage: `url(${wailistBackground})`,
         backgroundPosition: "50% 20%",
         backgroundSize: "cover",
-        backgroundRepeat: "no-repeat",
       }}
     >
       <Container
@@ -132,7 +132,7 @@ const WaitlistPage = () => {
           variant="h1"
           sx={{
             textAlign: "center",
-            fontSize: isMobile ? "2.5rem" : "3.5rem",
+            fontSize: isMobile ? "2rem" : "3.5rem",
             fontWeight: "600",
             color: lightShade ? "white" : "black",
             WebkitTextStroke: !lightShade && "1px white",
@@ -151,7 +151,7 @@ const WaitlistPage = () => {
             backgroundColor: lightShade
               ? "rgba(255, 255, 255, 0.19)"
               : "rgba(211, 211, 211, 0.2)",
-            padding: isMobile ? "14px 32px" : "32px 32px",
+            padding: isMobile ? "14px 24px" : "32px 32px",
             borderRadius: "48px",
             border: "1px solid rgba(211, 211, 211, 1)",
             backdropFilter: "blur(20px)",
@@ -159,33 +159,60 @@ const WaitlistPage = () => {
         >
           <Typography
             component="h3"
-            variant="h1"
             sx={{
-              fontSize: isMobile ? "1.8rem" : "3rem",
+              fontSize: isMobile ? "1.3rem" : "3rem",
               fontWeight: "500",
               textAlign: "center",
-              marginBottom: "20px",
+              marginBottom: "5px",
               lineHeight: isMobile ? "28px" : "40px",
             }}
           >
-            <span style={{ fontFamily: '"David Libre" serif' }}>
+            <span
+              style={{
+                fontFamily: "David Libre",
+                fontStyle: "italic",
+                fontWeight: 300,
+              }}
+            >
               Be among the first to experience{" "}
             </span>
-            groundbreaking&nbsp;AI
+            Groundbreaking&nbsp;AI
           </Typography>
           <Stack direction="row">
             {features.map((feature, index) => (
-              <Typography key={index} variant="h1" sx={{ fontSize: "1rem" }}>
-                {feature}
-              </Typography>
+              <Stack
+                key={index}
+                direction="row"
+                alignItems="center"
+                sx={{ marginBottom: "5px" }}
+              >
+                <CheckCircleOutlineIcon
+                  sx={{
+                    fontSize: isMobile ? "7px" : "1.3rem",
+                    marginLeft: isMobile ? "7px" : "15px",
+                  }}
+                />
+                <Typography
+                  key={index}
+                  variant="body1"
+                  sx={{
+                    fontSize: isMobile ? "0.4rem" : "0.9rem",
+                    marginLeft: isMobile ? "2px" : "5px",
+                    fontWeight: 400,
+                  }}
+                >
+                  {feature}
+                </Typography>
+              </Stack>
             ))}
           </Stack>
           <Typography
-            variant="h1"
+            variant="body1"
             sx={{
-              fontSize: isMobile ? "0.7rem" : "0.9rem",
-              fontWeight: "400",
+              fontSize: isMobile ? "0.4rem" : "0.9rem",
+              fontWeight: "500",
               textAlign: "center",
+              marginTop: isMobile ? "4px" : "20px",
             }}
           >
             Join the waitlist. Be the first to know when we launch. Your future
@@ -205,6 +232,7 @@ const WaitlistPage = () => {
             fullWidth
             label="Email Address"
             placeholder="Your Email Address"
+            size={isMobile ? "small" : "medium"}
             value={email}
             onChange={handleChange}
             InputProps={{
@@ -212,6 +240,9 @@ const WaitlistPage = () => {
                 <InputAdornment position="end">
                   <Button
                     variant="contained"
+                    sx={{
+                      fontSize: isMobile ? "0.4rem" : "0.9rem",
+                    }}
                     size="small"
                     color="primary"
                     disabled={loading ? true : false}
@@ -230,8 +261,12 @@ const WaitlistPage = () => {
             }}
           />
           <Typography
-            variant="h1"
-            sx={{ fontSize: "0.8rem", marginTop: "5px" }}
+            variant="body1"
+            sx={{
+              fontSize: isMobile ? "0.4rem" : "0.8rem",
+              marginTop: isMobile ? "" : "5px",
+              fontWeight: 400,
+            }}
           >
             We respect your privacy. No spam, just updates
           </Typography>
