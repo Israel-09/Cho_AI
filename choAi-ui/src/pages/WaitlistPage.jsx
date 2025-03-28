@@ -3,6 +3,7 @@ import {
   Box,
   Button,
   Container,
+  Grid2,
   InputAdornment,
   Stack,
   TextField,
@@ -164,7 +165,7 @@ const WaitlistPage = () => {
               fontWeight: "500",
               textAlign: "center",
               marginBottom: "5px",
-              lineHeight: isMobile ? "28px" : "40px",
+              lineHeight: isMobile ? "18px" : "40px",
             }}
           >
             <span
@@ -176,19 +177,15 @@ const WaitlistPage = () => {
             >
               Be among the first to experience{" "}
             </span>
+            <br />
             Groundbreaking&nbsp;AI
           </Typography>
-          <Stack direction="row">
+          <Grid2 container sx={{ width: "100%", justifyContent: "center" }}>
             {features.map((feature, index) => (
-              <Stack
-                key={index}
-                direction="row"
-                alignItems="center"
-                sx={{ marginBottom: "5px" }}
-              >
+              <Grid2 key={index} container sx={{ marginBottom: "5px" }}>
                 <CheckCircleOutlineIcon
                   sx={{
-                    fontSize: isMobile ? "7px" : "1.3rem",
+                    fontSize: isMobile ? "16px" : "18px",
                     marginLeft: isMobile ? "7px" : "15px",
                   }}
                 />
@@ -196,20 +193,20 @@ const WaitlistPage = () => {
                   key={index}
                   variant="body1"
                   sx={{
-                    fontSize: isMobile ? "0.4rem" : "0.9rem",
+                    fontSize: isMobile ? "0.6rem" : "0.9rem",
                     marginLeft: isMobile ? "2px" : "5px",
                     fontWeight: 400,
                   }}
                 >
                   {feature}
                 </Typography>
-              </Stack>
+              </Grid2>
             ))}
-          </Stack>
+          </Grid2>
           <Typography
             variant="body1"
             sx={{
-              fontSize: isMobile ? "0.4rem" : "0.9rem",
+              fontSize: isMobile ? "0.5rem" : "0.9rem",
               fontWeight: "500",
               textAlign: "center",
               marginTop: isMobile ? "4px" : "20px",
