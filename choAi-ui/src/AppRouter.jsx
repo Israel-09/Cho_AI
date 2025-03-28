@@ -6,6 +6,7 @@ import SignupPage from "./pages/SignupPage";
 import SigninPage from "./pages/SigninPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import WaitlistPage from "./pages/WaitlistPage";
+import PersonaPage from "./pages/PersonaPage";
 
 function Router() {
   return (
@@ -16,6 +17,10 @@ function Router() {
       <Route path="signin" element={<SigninPage />} />
       <Route path="reset-password" element={<ResetPasswordPage />} />
       <Route path="waitlist" element={<WaitlistPage />} />
+      <Route path="get-started" element={<PersonaPage />} />
+
+      {/* Redirect all other paths to the home page */}
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }
