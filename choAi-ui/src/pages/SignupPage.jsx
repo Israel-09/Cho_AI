@@ -13,6 +13,8 @@ import {
   useMediaQuery,
   FormControl,
   InputLabel,
+  Select,
+  MenuItem,
 } from "@mui/material";
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
@@ -26,7 +28,8 @@ const SignupPage = () => {
   const [form, setForm] = useState({
     name: "",
     email: "",
-    phone: "",
+    gender: "",
+    dob: "",
     password: "",
   });
   const [showPassword, setShowPassword] = useState(false);
@@ -90,14 +93,37 @@ const SignupPage = () => {
               placeholder="Email address"
               required
             />
-            <TextField
-              fullWidth
-              margin="normal"
-              label="Phone Number"
-              name="phone"
-              autoComplete="email"
-              placeholder="Phone number"
-            />
+            <Box sx={{ display: "flex", gap: 2, marginTop: 2 }}>
+              <FormControl sx={{ width: "50%" }}>
+                <InputLabel id="gender-label">Gender</InputLabel>
+                <Select
+                  fullWidth
+                  labelId="gender-label"
+                  id="gender"
+                  name="gender"
+                  label="Gender"
+                  value={form.gender}
+                  onChange={handleChange}
+                >
+                  <MenuItem value="male">Male</MenuItem>
+                  <MenuItem value="female">Female</MenuItem>
+                  <MenuItem value="unknown">Prefer not to say</MenuItem>{" "}
+                  {/* Fixed typo */}
+                </Select>
+              </FormControl>
+
+              <TextField
+                sx={{ width: "50%" }}
+                id="dob"
+                label="Date of Birth"
+                name="dob"
+                type="date"
+                value={form.dob}
+                onChange={handleChange}
+                slotProps={{ inputLabel: { shrink: true } }}
+                inputProps={{ max: new Date().toISOString().split("T")[0] }} // Optional: restrict future dates
+              />
+            </Box>
 
             {/* Password field in its own FormControl */}
             <FormControl fullWidth margin="normal" variant="outlined">
