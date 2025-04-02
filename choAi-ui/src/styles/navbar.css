@@ -1,0 +1,30 @@
+.nav-item {
+  margin: 0;
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  border-radius: 13px;
+  padding: 5px 18px;
+  color: #fff;
+  text-decoration: none;
+}
+
+.nav-item i {
+  font-size: 20px;
+  margin-right: 10px;
+}
+
+.nav-item-closed span {
+  display: none;
+}
+
+.sub-nav {
+  display: none;
+}
+
+a .nav-item:hover {
+  background-color: rgba(50, 50, 50, 1);
+  color: #000;
+}

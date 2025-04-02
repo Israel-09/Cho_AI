@@ -7,6 +7,7 @@ import SigninPage from "./pages/SigninPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import WaitlistPage from "./pages/WaitlistPage";
 import PersonaPage from "./pages/PersonaPage";
+import ChatPage from "./pages/ChatPage";
 
 function Router() {
   return (
@@ -18,6 +19,7 @@ function Router() {
       <Route path="reset-password" element={<ResetPasswordPage />} />
       <Route path="waitlist" element={<WaitlistPage />} />
       <Route path="get-started" element={<PersonaPage />} />
+      <Route path="chat" element={<ChatPage />} />
 
       {/* Redirect all other paths to the home page */}
       <Route path="*" element={<Navigate to="/" replace />} />

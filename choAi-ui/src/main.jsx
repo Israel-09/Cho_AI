@@ -5,7 +5,8 @@ import { AuthProvider } from "./AuthContext.jsx";
 import theme from "./theme.js";
 import { ThemeProvider } from "@emotion/react";
 import { CssBaseline } from "@mui/material";
-
+import "boxicons/css/boxicons.min.css";
+import "./index.css";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>

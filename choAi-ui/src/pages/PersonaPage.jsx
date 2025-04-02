@@ -13,7 +13,7 @@ import {
 } from "@mui/material";
 
 const PersonaPage = () => {
-  const [selectedRole, setSelectedRole] = useState("Creative");
+  const [selectedRole, setSelectedRole] = useState("");
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
@@ -97,7 +97,7 @@ const PersonaPage = () => {
                       transition: "transform 0.3s ease",
                     },
                     "&:hover .category-name, &:hover .description": {
-                      color: "#e0e0e0",
+                      color: "#fff",
                       animation: "bounce 0.5s ease",
                     },
                     "@keyframes bounce": {

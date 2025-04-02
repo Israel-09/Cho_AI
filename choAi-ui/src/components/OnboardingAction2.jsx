@@ -13,7 +13,13 @@ const OnboardingAction2 = ({ onNext }) => {
       >
         Hi, I'm Cho, your Ai buddy
       </Typography>
-      <Button fullWidth variant="contained" onClick={onNext}>
+      <Button
+        fullWidth
+        variant="contained"
+        onClick={() => {
+          navigate("/get-started");
+        }}
+      >
         Try Cho now
       </Button>
       <ButtonGroup fullWidth variant="contained" sx={{ margin: "10px" }}>
