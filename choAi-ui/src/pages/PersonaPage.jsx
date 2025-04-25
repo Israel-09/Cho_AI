@@ -11,11 +11,13 @@ import {
   useTheme,
   useMediaQuery,
 } from "@mui/material";
+import { useNavigate } from "react-router-dom";
 
 const PersonaPage = () => {
   const [selectedRole, setSelectedRole] = useState("");
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const navigate = useNavigate();
 
   const handleRoleChange = (event) => {
     setSelectedRole(event.target.value);
@@ -23,7 +25,7 @@ const PersonaPage = () => {
 
   const handleSubmit = () => {
     console.log("Selected Role:", selectedRole);
-    // Add your submission logic here
+    navigate("/chat");
   };
 
   const roles = [

@@ -1,6 +1,6 @@
 .nav-item {
+  position: relative;
   margin: 0;
-  width: 100%;
   white-space: nowrap;
   overflow: hidden;
   display: flex;
@@ -23,7 +23,7 @@
   display: none;
 }
 
-a .nav-item:hover {
+.nav-item:hover {
   background-color: rgba(50, 50, 50, 1);
   color: #000;
 }

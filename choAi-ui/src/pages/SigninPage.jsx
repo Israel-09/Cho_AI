@@ -10,17 +10,57 @@ import {
   InputLabel,
   Button,
   Link,
+  Alert,
 } from "@mui/material";
 import React, { useState } from "react";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
+import { useAuth } from "../hooks/useAuth";
 
 const SigninPage = () => {
+  const [loading, setLoading] = useState(false);
+  const [feedback, setFeedback] = useState({});
   const [credentials, setCredentials] = useState({
     email: "",
     password: "",
   });
   const [showPassword, setShowPassword] = useState(false);
+  const { login } = useAuth();
+
+  const handleSubmit = async (e) => {
+    setLoading(true);
+    setFeedback({}); // Reset feedback state
+    e.preventDefault();
+    try {
+      await login(credentials.email, credentials.password);
+    } catch (error) {
+      console.error("Login failed:", error);
+      if (error.code === "auth/user-not-found") {
+        setFeedback({
+          message: "User not found. Please check your email.",
+          severity: "error",
+        });
+      } else if (error.code === "auth/wrong-password") {
+        setFeedback({
+          message: "Incorrect password. Please try again.",
+          severity: "error",
+        });
+      } else {
+        setFeedback({
+          message: "Login failed. Please check your credentials.",
+          severity: "error",
+        });
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+  const handleClose = (event, reason) => {
+    if (reason === "clickaway") {
+      return;
+    }
+    setFeedback({});
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -96,6 +136,7 @@ const SigninPage = () => {
                     showPassword ? "hide the password" : "display the password"
                   }
                   onClick={handleClickShowPassword}
+                  disabled={loading}
                   edge="end"
                 >
                   {showPassword ? <VisibilityOff /> : <Visibility />}
@@ -105,7 +146,24 @@ const SigninPage = () => {
             label="Password"
           />
         </FormControl>
-        <Button fullWidth variant="contained" sx={{ marginTop: "12px" }}>
+        {feedback.message && (
+          <Alert
+            severity={feedback.severity}
+            variant="outlined"
+            sx={{ width: "100%", marginTop: "15px" }}
+            onClose={handleClose}
+          >
+            {feedback.message}
+          </Alert>
+        )}
+        <Button
+          fullWidth
+          variant="contained"
+          sx={{ marginTop: "12px" }}
+          onClick={handleSubmit}
+          loading={loading}
+          disabled={loading}
+        >
           Sign in
         </Button>
       </form>

@@ -10,28 +10,75 @@ import {
   InputLabel,
   Button,
   Link,
+  Alert,
 } from "@mui/material";
 import React, { useState } from "react";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
+import { sendPasswordResetEmail } from "firebase/auth";
+import { auth } from "../config/firebase"; // Adjust the import path as necessary
 
 const ResetPasswordPage = () => {
-  const [credentials, setCredentials] = useState({
-    email: "",
-    password: "",
-  });
-  const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState("");
+  const [feedback, setFeedback] = useState({});
+  const [errors, setErrors] = useState({});
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setCredentials((prevState) => ({
-      ...prevState,
-      [name]: value,
-    }));
+    setEmail(value);
   };
 
   const handleClickShowPassword = () => setShowPassword((show) => !show);
 
+  const validateForm = () => {
+    let isValid = true;
+    const newErrors = {};
+
+    if (!email.trim()) {
+      newErrors.email = "Email is required";
+      isValid = false;
+    } else if (!/\S+@\S+\.\S+/.test(email)) {
+      newErrors.email = "Invalid email format";
+      isValid = false;
+    }
+
+    setErrors(newErrors);
+    return isValid;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setFeedback({}); // Reset feedback state
+    setErrors({}); // Reset errors state
+    if (validateForm()) {
+      try {
+        await sendPasswordResetEmail(auth, email);
+        setFeedback({
+          message: "Password reset email sent successfully.",
+          severity: "success",
+        });
+      } catch (error) {
+        console.error("Error sending password reset email:", error);
+        console.log(error.code);
+        if (error.code === "auth/user-not-found") {
+          setFeedback({
+            message: "No user found with this email address.",
+            severity: "error",
+          });
+        } else if (error.code === "auth/missing-email") {
+          setErrors({ email: "Invalid email address." });
+        } else {
+          setErrors({ email: "Error sending password reset email." });
+        }
+      }
+    }
+  };
+  const handleClose = (event, reason) => {
+    if (reason === "clickaway") {
+      return;
+    }
+    setFeedback({});
+  };
   return (
     <Container
       fixed
@@ -62,6 +109,16 @@ const ResetPasswordPage = () => {
       >
         Enter your registered email address
       </Box>
+      {feedback.message && (
+        <Alert
+          severity={feedback.severity}
+          variant="outlined"
+          sx={{ width: "100%", marginTop: "15px" }}
+          onClose={handleClose}
+        >
+          {feedback.message}
+        </Alert>
+      )}
       <form style={{ width: "100%" }}>
         {/* Email field */}
         <TextField
@@ -72,10 +129,12 @@ const ResetPasswordPage = () => {
           placeholder="Email"
           required
           autoComplete="email"
-          value={credentials.email}
+          value={email}
           onChange={handleChange}
+          error={!!errors.email}
+          helperText={errors.email}
         />
-        <Button fullWidth variant="contained">
+        <Button fullWidth variant="contained" onClick={handleSubmit}>
           Continue
         </Button>
       </form>

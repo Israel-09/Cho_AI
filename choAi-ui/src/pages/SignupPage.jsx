@@ -7,7 +7,6 @@ import {
   Button,
   InputAdornment,
   IconButton,
-  FilledInput,
   OutlinedInput,
   useTheme,
   useMediaQuery,
@@ -15,6 +14,7 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  Alert,
 } from "@mui/material";
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
@@ -23,6 +23,9 @@ import GoogleIcon from "../components/GoogleIcon";
 import AppleIcon from "../components/AppleIcon";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
+import { httpsCallable } from "firebase/functions";
+import { functions } from "../config/firebase";
+import { useAuth } from "../hooks/useAuth";
 
 const SignupPage = () => {
   const [form, setForm] = useState({
@@ -33,8 +36,12 @@ const SignupPage = () => {
     password: "",
   });
   const [showPassword, setShowPassword] = useState(false);
+  const [feedback, setFeedback] = useState({});
+  const [loading, setLoading] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const [errors, setErrors] = useState({});
+  const { login } = useAuth();
 
   const handleClickShowPassword = () => setShowPassword((show) => !show);
 
@@ -44,6 +51,91 @@ const SignupPage = () => {
       ...prevState,
       [name]: value,
     }));
+    // Clear the error for the changed field
+    setErrors((prevErrors) => ({
+      ...prevErrors,
+      [name]: "",
+    }));
+  };
+
+  const validateForm = () => {
+    let isValid = true;
+    const newErrors = {};
+
+    if (!form.name.trim()) {
+      newErrors.name = "Name is required";
+      isValid = false;
+    }
+
+    if (!form.email.trim()) {
+      newErrors.email = "Email is required";
+      isValid = false;
+    } else if (!/\S+@\S+\.\S+/.test(form.email)) {
+      newErrors.email = "Invalid email format";
+      isValid = false;
+    }
+
+    if (!form.gender) {
+      newErrors.gender = "Gender is required";
+      isValid = false;
+    }
+
+    if (!form.dob) {
+      newErrors.dob = "Date of Birth is required";
+      isValid = false;
+    }
+
+    if (!form.password) {
+      newErrors.password = "Password is required";
+      isValid = false;
+    } else if (form.password.length < 6) {
+      newErrors.password = "Password must be at least 6 characters";
+      isValid = false;
+    }
+
+    setErrors(newErrors);
+    return isValid;
+  };
+
+  const handleSignup = async (e) => {
+    e.preventDefault(); // Prevent default form submission
+    setFeedback({}); // Reset feedback state
+    setErrors({}); // Reset errors state
+    if (validateForm()) {
+      const createUserAndProfile = httpsCallable(functions, "createAccount");
+      try {
+        setLoading(true);
+        const response = await createUserAndProfile({
+          name: form.name,
+          email: form.email,
+          gender: form.gender,
+          dob: form.dob,
+          password: form.password,
+        });
+        console.log("User created successfully:", response.data);
+        setFeedback({
+          message: "Account created successfully!",
+          severity: "success",
+        });
+        login(form.email, form.password);
+        setForm({ name: "", email: "", gender: "", dob: "", password: "" });
+      } catch (error) {
+        console.error("Error creating user:", error);
+        setFeedback({
+          message: error.message || "Error creating account.",
+          severity: "error",
+        });
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
+  const handleClose = (event, reason) => {
+    if (reason === "clickaway") {
+      return;
+    }
+    setFeedback({});
   };
 
   return (
@@ -74,7 +166,9 @@ const SignupPage = () => {
         gap={1}
       >
         <Grid2 size={isMobile ? 12 : 5}>
-          <form>
+          <form onSubmit={handleSignup}>
+            {" "}
+            {/* Added onSubmit handler */}
             <TextField
               fullWidth
               margin="normal"
@@ -82,7 +176,10 @@ const SignupPage = () => {
               name="name"
               placeholder="Name"
               autoComplete="name"
-              required
+              value={form.name}
+              onChange={handleChange}
+              error={!!errors.name}
+              helperText={errors.name}
             />
             <TextField
               fullWidth
@@ -91,10 +188,13 @@ const SignupPage = () => {
               name="email"
               autoComplete="email"
               placeholder="Email address"
-              required
+              value={form.email}
+              onChange={handleChange}
+              error={!!errors.email}
+              helperText={errors.email}
             />
             <Box sx={{ display: "flex", gap: 2, marginTop: 2 }}>
-              <FormControl sx={{ width: "50%" }}>
+              <FormControl sx={{ width: "50%" }} error={!!errors.gender}>
                 <InputLabel id="gender-label">Gender</InputLabel>
                 <Select
                   fullWidth
@@ -107,9 +207,13 @@ const SignupPage = () => {
                 >
                   <MenuItem value="male">Male</MenuItem>
                   <MenuItem value="female">Female</MenuItem>
-                  <MenuItem value="unknown">Prefer not to say</MenuItem>{" "}
-                  {/* Fixed typo */}
+                  <MenuItem value="unknown">Prefer not to say</MenuItem>
                 </Select>
+                {errors.gender && (
+                  <Typography variant="caption" color="error">
+                    {errors.gender}
+                  </Typography>
+                )}
               </FormControl>
 
               <TextField
@@ -121,12 +225,18 @@ const SignupPage = () => {
                 value={form.dob}
                 onChange={handleChange}
                 slotProps={{ inputLabel: { shrink: true } }}
-                inputProps={{ max: new Date().toISOString().split("T")[0] }} // Optional: restrict future dates
+                inputProps={{ max: new Date().toISOString().split("T")[0] }}
+                error={!!errors.dob}
+                helperText={errors.dob}
               />
             </Box>
-
             {/* Password field in its own FormControl */}
-            <FormControl fullWidth margin="normal" variant="outlined">
+            <FormControl
+              fullWidth
+              margin="normal"
+              variant="outlined"
+              error={!!errors.password}
+            >
               <InputLabel htmlFor="password-input">Password</InputLabel>
               <OutlinedInput
                 id="password-input"
@@ -134,7 +244,6 @@ const SignupPage = () => {
                 name="password"
                 placeholder="Password"
                 autoComplete="password"
-                required
                 value={form.password}
                 onChange={handleChange}
                 endAdornment={
@@ -154,27 +263,44 @@ const SignupPage = () => {
                 }
                 label="Password"
               />
+              {errors.password && (
+                <Typography variant="caption" color="error">
+                  {errors.password}
+                </Typography>
+              )}
             </FormControl>
+            {feedback.message && (
+              <Alert
+                severity={feedback.severity}
+                variant="outlined"
+                sx={{ width: "100%", marginTop: "15px" }}
+                onClose={handleClose}
+              >
+                {feedback.message}
+              </Alert>
+            )}
             <Button
+              type="submit" // Changed to submit button
               variant="contained"
               fullWidth
               sx={{ marginY: 2, height: 40 }}
+              loading={loading}
             >
               Sign Up
             </Button>
           </form>
           <Typography>
             Already have an account?{" "}
-            <a
-              href="/signin"
+            <Link
+              to="/signin"
               style={{
-                color: "white",
+                color: theme.palette.primary.main, // Use theme color
                 textDecorationLine: "none",
                 fontWeight: 600,
               }}
             >
-              <strong color="secondary">Sign&nbsp;in</strong>
-            </a>{" "}
+              <strong>Sign&nbsp;in</strong>
+            </Link>{" "}
           </Typography>
         </Grid2>
         <Grid2
