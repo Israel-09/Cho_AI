@@ -20,7 +20,7 @@ const functions = getFunctions(app);
 if (import.meta.env.MODE === "development") {
   connectAuthEmulator(auth, "http://localhost:9099");
 
-  connectFirestoreEmulator(db, "localhost", 8080);
+  connectFirestoreEmulator(db, "localhost", 8090);
 
   connectFunctionsEmulator(functions, "localhost", 5001);
 }

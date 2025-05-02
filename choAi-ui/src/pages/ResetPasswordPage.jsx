@@ -17,6 +17,7 @@ import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import { sendPasswordResetEmail } from "firebase/auth";
 import { auth } from "../config/firebase"; // Adjust the import path as necessary
+import logo from "@/assets/logo.png";
 
 const ResetPasswordPage = () => {
   const [email, setEmail] = useState("");
@@ -52,7 +53,10 @@ const ResetPasswordPage = () => {
     setErrors({}); // Reset errors state
     if (validateForm()) {
       try {
-        await sendPasswordResetEmail(auth, email);
+        await sendPasswordResetEmail(auth, email, {
+          url: `${import.meta.env.VITE_APP_URL}/signin`,
+          handleCodeInApp: true,
+        });
         setFeedback({
           message: "Password reset email sent successfully.",
           severity: "success",
@@ -84,18 +88,19 @@ const ResetPasswordPage = () => {
       fixed
       maxWidth="xs"
       sx={{
-        padding: 5,
         display: "flex",
+        height: "90vh",
         flexDirection: "column",
         gap: 2,
         justifyContent: "center",
         alignItems: "center",
       }}
     >
+      <Box component={"img"} src={logo} height={"90px"} />
       <Typography
         variant="h3"
         component="h1"
-        sx={{ fontWeight: 700, fontSize: "2rem", textAlign: "center" }}
+        sx={{ fontWeight: 700, fontSize: "1.5rem", textAlign: "center" }}
       >
         Reset Password
       </Typography>
@@ -105,6 +110,7 @@ const ResetPasswordPage = () => {
           width: "95%",
           textAlign: "center",
           paddingY: 0.5,
+          fontSize: "0.9rem",
         }}
       >
         Enter your registered email address

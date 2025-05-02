@@ -16,6 +16,7 @@ import React, { useState } from "react";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import { useAuth } from "../hooks/useAuth";
+import logo from "@/assets/logo.png";
 
 const SigninPage = () => {
   const [loading, setLoading] = useState(false);
@@ -86,9 +87,11 @@ const SigninPage = () => {
         alignItems: "center",
       }}
     >
+      <Box component={"img"} src={logo} height={"90px"} />
       <Typography
         variant="h3"
         component="h1"
+        mt="4"
         sx={{ fontWeight: 700, fontSize: "2rem", textAlign: "center" }}
       >
         Sign in

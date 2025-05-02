@@ -8,9 +8,7 @@ const OnboardingAction1 = ({ onNext }) => {
       <Typography
         sx={{ textAlign: "center", marginBottom: 5, fontSize: "1.2rem" }}
       >
-        ASK CHO ANYTHING
-        <br />
-        GET RESPONSES YOU CAN TRUST
+        GOT A QUESTION? AskCho
       </Typography>
       <Button fullWidth variant="contained" onClick={onNext}>
         Next

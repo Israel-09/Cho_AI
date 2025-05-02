@@ -1,27 +1,35 @@
 import {
-  AppBar,
   Box,
-  Button,
   ClickAwayListener,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
-  Icon,
   IconButton,
   Stack,
   Typography,
   useMediaQuery,
   useTheme,
+  Snackbar,
+  Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Button,
 } from "@mui/material";
 import {
   AccountCircleOutlined as AccountIcon,
   Menu as MenuIcon,
 } from "@mui/icons-material";
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import "../styles/navbar.css";
+import CookiePolicyDialog from "./CookiePolicyDialog";
+import PrivacyPolicyDialog from "./PrivacyPolicyDialog";
+import {
+  deleteUserAccount,
+  deleteAllConversations,
+} from "../utils/manageUserAccount";
+import { signOut } from "firebase/auth";
+import { auth } from "../config/firebase";
 import { useAuth } from "../hooks/useAuth";
 
 const NoHistory = () => {
@@ -32,58 +40,104 @@ const NoHistory = () => {
   );
 };
 
-const deleteNavigation = [
-  { name: "Delete all chats", icon: <AccountIcon />, path: "/delete" },
-  { name: "Delete account", icon: <AccountIcon />, path: "/delete-account" },
-];
-
 const isEmpty = (obj) => {
   return Object.keys(obj).length === 0 && obj.constructor === Object;
 };
 
-const AppNavbar = () => {
-  const [open, setOpen] = useState(false);
-  const [logoutConfirm, setLogoutConfirm] = useState(false);
-  const [history, setHistory] = useState({});
+const AppNavbar = ({
+  conversations = [],
+  conversationId,
+  handleDrawerToggle,
+  navOpen,
+  setNavOpen,
+}) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const maxWidth = 320;
   const minWidth = 60;
-  const { logout } = useAuth();
+  const [cookiesOpen, setCookiesOpen] = useState(false);
+  const [privacyOpen, setPrivacyOpen] = useState(false);
+  const [snackbarError, setSnackbarError] = useState(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [openDialog, setOpenDialog] = useState(false);
+  const [confirmEmail, setConfirmEmail] = useState("");
+  const navigate = useNavigate();
+  const { user } = useAuth();
 
-  const handleDrawerToggle = () => {
-    setOpen(!open);
+  const handleDeleteAccount = async () => {
+    if (isProcessing) return;
+    if (confirmEmail !== auth.currentUser?.email) {
+      setSnackbarError("Email does not match your account");
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      await deleteUserAccount();
+      await signOut(auth);
+      setSnackbarError(null);
+      handleCloseDialog();
+      navigate("/chat");
+    } catch (error) {
+      setSnackbarError(error.message);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
-  const handleClickOpen = () => {
-    setLogoutConfirm(true);
+  const handleDeleteConversations = async () => {
+    if (isProcessing) return;
+    setIsProcessing(true);
+    try {
+      await deleteAllConversations();
+      setSnackbarError(null);
+      navigate("/chat");
+    } catch (error) {
+      setSnackbarError(error.message);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
-  const handleClose = () => {
-    setLogoutConfirm(false);
+  const handleOpenDialog = () => {
+    setOpenDialog(true);
+    setConfirmEmail("");
+  };
+
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
+    setConfirmEmail("");
+  };
+
+  const handleCookiesDialog = () => {
+    setCookiesOpen(!cookiesOpen);
+  };
+
+  const handlePrivacyDialog = () => {
+    setPrivacyOpen(!privacyOpen);
   };
 
   return (
-    <ClickAwayListener onClickAway={() => isMobile && setOpen(false)}>
+    <ClickAwayListener onClickAway={() => isMobile && setNavOpen(false)}>
       <Box
         sx={{
           marginRight: 1,
-          position: isMobile && open ? "absolute" : "block",
+          position: isMobile && navOpen ? "absolute" : "block",
           inset: "0 auto 0 0",
           height: "100vh",
-          width: open ? maxWidth : minWidth,
-          backgroundColor: "rgba(58, 58, 58, 1)",
+          width: navOpen ? maxWidth : minWidth,
+          backgroundColor: "rgb(24, 23, 23)",
           animation: "fadeIn 0.3s",
           transition: "width 0.2s ease-in-out",
           paddingX: 1,
           zIndex: 1,
         }}
-        onClickAway={() => setOpen(false)}
+        onClickAway={() => setNavOpen(false)}
       >
         <Stack paddingTop={2} sx={{ width: "100%" }}>
           <Box sx={{ width: "100%" }}>
             <IconButton
-              sx={{ float: open && "right" }}
+              sx={{ float: navOpen && "right" }}
               onClick={handleDrawerToggle}
             >
               <i class="bx bx-menu-alt-left" style={{ fontSize: "24px" }}></i>
@@ -92,16 +146,16 @@ const AppNavbar = () => {
 
           <Box
             sx={{
-              display: open ? "block" : "none",
-              paddingLeft: 2,
-              maxHeight: isMobile ? "120px" : "300px",
+              paddingRight: 2,
+              display: navOpen ? "block" : "none",
+              height: isMobile ? "30vh" : "45vh",
               whiteSpace: "nowrap",
               overflow: "hidden",
               textOverflow: "ellipsis",
-              width: "90%",
+              width: navOpen ? maxWidth - 10 : minWidth - 5,
               overflowY: "hidden",
               "&::-webkit-scrollbar": {
-                width: "8px",
+                width: "5px",
               },
               "&::-webkit-scrollbar-track": {
                 backgroundColor: "transparent",
@@ -109,7 +163,6 @@ const AppNavbar = () => {
               "&::-webkit-scrollbar-thumb": {
                 background: "#888",
                 borderRadius: "5px",
-                height: "40px",
                 width: "2px",
               },
               "&::-webkit-scrollbar-thumb:hover": {
@@ -127,233 +180,265 @@ const AppNavbar = () => {
               History
             </Typography>
 
-            {isEmpty(history) ? (
+            {isEmpty(conversations) ? (
               <NoHistory />
             ) : (
-              <>
-                <Typography variant="body2" sx={{ marginY: "2px" }}>
-                  Today
-                </Typography>
-                {history.today.length === 0 ? (
-                  <NoHistory />
-                ) : (
-                  <Box
-                    sx={{
-                      paddingLeft: 1,
-                    }}
-                  >
-                    {history.today.map((item, index) => (
-                      <Typography
-                        variant="body2"
-                        key={index}
-                        sx={{ fontSize: "14px", color: "#b0b0b0" }}
-                      >
-                        {item.title}
-                      </Typography>
-                    ))}
-                  </Box>
-                )}
-
-                <Typography variant="body2" sx={{ marginTop: "10px" }}>
-                  Last 30 days
-                </Typography>
-                <Box
+              conversations.map((item, index) => (
+                <Stack
+                  key={index}
+                  direction="row"
+                  spacing={1}
+                  marginBottom={"2px"}
+                  alignItems="center"
+                  className={navOpen ? "nav-item" : "nav-item nav-item-closed"}
+                  color="#ddd"
+                  onClick={() => navigate(`/chat/${item.id}`)}
                   sx={{
-                    paddingLeft: 1,
+                    cursor: "pointer",
+                    padding: "5px 10px",
+                    fontSize: "14px",
+                    backgroundColor:
+                      conversationId === item.id ? "#444" : "transparent",
+                    color: conversationId === item.id ? "white" : "#ddd",
+                    "&:hover": {
+                      backgroundColor: "#444",
+                      borderRadius: "5px",
+                    },
                   }}
                 >
-                  {isEmpty(history.last30days) ? (
-                    <NoHistory />
-                  ) : (
-                    <>
-                      {history.last30days.map((item, index) => (
-                        <Typography
-                          variant="body2"
-                          key={index}
-                          sx={{ fontSize: "16px", color: "#b0b0b0" }}
-                        >
-                          {item.title}
-                        </Typography>
-                      ))}
-                    </>
-                  )}
-                </Box>
-              </>
+                  <span>{item.title}</span>
+                </Stack>
+              ))
             )}
           </Box>
 
           {/* This is the new section for the  navigation items*/}
           <Box
             sx={{
+              height: isMobile ? "35vh" : "40vh",
+              width: navOpen ? maxWidth - 10 : minWidth - 5,
+              overflowY: "hidden",
               position: "absolute",
-              height: "330px",
-              width: open ? maxWidth - 10 : minWidth - 5,
-              display: "flex",
-              left: 2,
-              flexDirection: "column",
-              marginTop: open ? 0 : "170px",
-              bottom: 5,
-              overflow: "hidden",
+              bottom: 0,
+              "&:hover": {
+                overflowY: "auto",
+              },
+              "&::-webkit-scrollbar": {
+                width: "5px",
+              },
+              "&::-webkit-scrollbar-track": {
+                backgroundColor: "transparent",
+              },
+              "&::-webkit-scrollbar-thumb": {
+                background: "#888",
+                borderRadius: "5px",
+                width: "2px",
+              },
+              "&::-webkit-scrollbar-thumb:hover": {
+                background: "#555",
+              },
             }}
           >
-            <Box
+            <Stack
+              direction="row"
+              spacing={1}
+              alignItems="center"
+              className={navOpen ? "nav-item" : "nav-item nav-item-closed"}
               sx={{
-                width: "100%",
-                position: "absolute",
-                top: 0,
+                color: "#fff",
+                cursor: "pointer",
+              }}
+
+              // onClick={() => navigate("/explore")}
+            >
+              <i class="bx bxs-binoculars"></i>
+              <span>Explore</span>
+            </Stack>
+            {/* 
+              <Stack
+                direction="row"
+                spacing={1}
+                alignItems="center"
+                className={ navOpen? "nav-item" : "nav-item nav-item-closed"}
+              >
+                <i class="bx bx-user-circle"></i>
+                <span>Account</span>
+              </Stack> */}
+
+            <Stack
+              sx={{
+                paddingLeft: "7px",
+                marginBottom: "20px",
+                display: navOpen ? "block" : "None",
               }}
             >
+              {/* <a href="#" style={{ textDecoration: "none", color: "#fff" }}>
+                <Stack
+                  direction="row"
+                  spacing={1}
+                  alignItems="center"
+                  className={navOpen ? "nav-item" : "nav-item nav-item-closed"}
+                >
+                  <i class="bx bx-file"></i>
+                  <span>Terms of use</span>
+                </Stack>
+              </a> */}
               <a href="#" style={{ textDecoration: "none", color: "#fff" }}>
                 <Stack
                   direction="row"
                   spacing={1}
                   alignItems="center"
-                  className={open ? "nav-item" : "nav-item nav-item-closed"}
+                  className={navOpen ? "nav-item" : "nav-item nav-item-closed"}
+                  onClick={() => handlePrivacyDialog()}
+                  sx={{ cursor: "pointer" }}
                 >
-                  <i class="bx bxs-binoculars"></i>
-                  <span>Explore</span>
+                  <i class="bx bx-lock"></i>
+                  <span>Privacy policy</span>
+                  <PrivacyPolicyDialog
+                    privacyOpen={privacyOpen}
+                    handlePrivacyDialog={handlePrivacyDialog}
+                  />
                 </Stack>
               </a>
+
               <Stack
                 direction="row"
                 spacing={1}
                 alignItems="center"
                 className={open ? "nav-item" : "nav-item nav-item-closed"}
+                sx={{ cursor: "pointer" }}
+                onClick={() => handleCookiesDialog()}
               >
-                <i class="bx bx-user-circle"></i>
-                <span>Account</span>
+                <i class="bx bxs-cookie"></i>
+                <span>Cookies Policy</span>
+                <CookiePolicyDialog
+                  cookiesOpen={cookiesOpen}
+                  handleCookiesClose={handleCookiesDialog}
+                  setCookiesOpen={setCookiesOpen}
+                />
               </Stack>
+            </Stack>
 
-              <Stack
-                sx={{
-                  paddingLeft: "7px",
-                  marginBottom: "20px",
-                  display: open ? "block" : "None",
-                }}
-              >
-                <a href="#" style={{ textDecoration: "none", color: "#fff" }}>
-                  <Stack
-                    direction="row"
-                    spacing={1}
-                    alignItems="center"
-                    className={open ? "nav-item" : "nav-item nav-item-closed"}
-                  >
-                    <i class="bx bx-file"></i>
-                    <span>Terms of use</span>
-                  </Stack>
-                </a>
-                <a href="#" style={{ textDecoration: "none", color: "#fff" }}>
-                  <Stack
-                    direction="row"
-                    spacing={1}
-                    alignItems="center"
-                    className={open ? "nav-item" : "nav-item nav-item-closed"}
-                  >
-                    <i class="bx bx-smile"></i>
-                    <span>Privacy policy</span>
-                  </Stack>
-                </a>
-                <a href="#" style={{ textDecoration: "none", color: "#fff" }}>
-                  <Stack
-                    direction="row"
-                    spacing={1}
-                    alignItems="center"
-                    className={open ? "nav-item" : "nav-item nav-item-closed"}
-                  >
-                    <i class="bx bxs-hand"></i>
-                    <span>give us feedback</span>
-                  </Stack>
-                </a>
-              </Stack>
-            </Box>
-            <Box
-              sx={{
-                position: "absolute",
-                bottom: 0,
-                height: "150px",
-                width: "100%",
-              }}
+            <Stack
+              direction="row"
+              spacing={1}
+              alignItems="center"
+              className={navOpen ? "nav-item" : "nav-item nav-item-closed"}
             >
-              <a href="#" style={{ textDecoration: "none", color: "#fff" }}>
-                <Stack
-                  direction="row"
-                  spacing={1}
-                  alignItems="center"
-                  className={open ? "nav-item" : "nav-item nav-item-closed"}
-                >
-                  <i class="bx bx-comment-dots"></i>
-                  <span>Contact us</span>
-                </Stack>
-              </a>
+              <i class="bx bx-comment-dots"></i>
+              <span>Contact us / Feedback</span>
+            </Stack>
 
-              <div>
+            {/* <div>
                 <Stack
                   direction="row"
                   spacing={1}
                   alignItems="center"
                   className={open ? "nav-item" : "nav-item nav-item-closed"}
-                  onClick={handleClickOpen}
                   sx={{ cursor: "pointer" }}
                 >
                   <i class="bx bx-exit"></i>
                   <span>Log out</span>
                 </Stack>
-                <Dialog
-                  open={logoutConfirm}
-                  onClose={handleClose}
-                  aria-labelledby="alert-dialog-title"
-                  aria-describedby="alert-dialog-description"
-                >
-                  <DialogTitle id="alert-dialog-title">
-                    {"Confirm Sign Out"}
-                  </DialogTitle>
-                  <DialogContent>
-                    <DialogContentText id="alert-dialog-description">
-                      Are you sure you want to sign out?
-                    </DialogContentText>
-                  </DialogContent>
-                  <DialogActions>
-                    <Button onClick={handleClose}>Cancel</Button>
-                    <Button onClick={logout} autoFocus color="error">
-                      Sign Out
-                    </Button>
-                  </DialogActions>
-                </Dialog>
-              </div>
+              </div> */}
+
+            <Snackbar
+              open={!!snackbarError}
+              autoHideDuration={6000}
+              onClose={() => setSnackbarError(null)}
+              anchorOrigin={{ vertical: "top", horizontal: "right" }}
+            >
+              <Alert severity="error">{snackbarError}</Alert>
+            </Snackbar>
+
+            <Stack
+              sx={{ paddingLeft: "7px", display: navOpen ? "block" : "None" }}
+              className="sub-nav"
+            >
+              <Stack
+                direction="row"
+                spacing={1}
+                alignItems="center"
+                sx={{ color: "#f00" }}
+                className={open ? "nav-item" : "nav-item nav-item-closed"}
+                onClick={handleDeleteConversations}
+                disabled={isProcessing}
+              >
+                <i class="bx bx-x" style={{ fontSize: "24px" }}></i>
+                <span>Delete all chats</span>
+              </Stack>
 
               <Stack
-                sx={{ paddingLeft: "7px", display: open ? "block" : "None" }}
-                className="sub-nav"
+                direction="row"
+                spacing={1}
+                alignItems="center"
+                sx={{ color: "#f00", cursor: "pointer" }}
+                className={open ? "nav-item" : "nav-item nav-item-closed"}
+                onClick={handleOpenDialog}
+                disabled={isProcessing}
               >
-                <a
-                  href="#"
-                  style={{ textDecoration: "none", color: theme.palette.error }}
-                >
-                  <Stack
-                    direction="row"
-                    spacing={1}
-                    alignItems="center"
-                    sx={{ color: "#f00" }}
-                    className={open ? "nav-item" : "nav-item nav-item-closed"}
-                  >
-                    <i class="bx bx-x" style={{ fontSize: "24px" }}></i>
-                    <span>Delete all chats</span>
-                  </Stack>
-                </a>
-                <a href="#" style={{ textDecoration: "none", color: "0101ff" }}>
-                  <Stack
-                    direction="row"
-                    spacing={1}
-                    alignItems="center"
-                    sx={{ color: "#f00" }}
-                    className={open ? "nav-item" : "nav-item nav-item-closed"}
-                  >
-                    <i class="bx bx-user-circle"></i>
-                    <span>Delete account</span>
-                  </Stack>
-                </a>
+                <i class="bx bx-user-circle"></i>
+                <span>Delete acount</span>
               </Stack>
-            </Box>
+              <Dialog open={openDialog} onClose={handleCloseDialog}>
+                <DialogTitle textAlign={"center"}>
+                  Confirm Account Deletion
+                </DialogTitle>
+                <DialogContent>
+                  <Typography
+                    variant="body1"
+                    gutterBottom
+                    textAlign={"center"}
+                    color="error"
+                  >
+                    Are you sure you want to delete your account? This action
+                    cannot be undone.
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    color="textSecondary"
+                    textAlign={"center"}
+                  >
+                    Please type your email to confirm:
+                  </Typography>
+                </DialogContent>
+                <DialogContent>
+                  <TextField
+                    label="Type your email to confirm"
+                    value={confirmEmail}
+                    onChange={(e) => setConfirmEmail(e.target.value)}
+                    fullWidth
+                    margin="normal"
+                    disabled={isProcessing}
+                    helperText={
+                      confirmEmail && confirmEmail !== auth.currentUser?.email
+                        ? "Email does not match your account"
+                        : ""
+                    }
+                    error={
+                      confirmEmail && confirmEmail !== auth.currentUser?.email
+                    }
+                    autoFocus
+                  />
+                </DialogContent>
+                <DialogActions>
+                  <Button
+                    onClick={handleCloseDialog}
+                    variant="contained"
+                    disabled={isProcessing}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleDeleteAccount}
+                    color="error"
+                    disabled={isProcessing || !confirmEmail}
+                  >
+                    Delete
+                  </Button>
+                </DialogActions>
+              </Dialog>
+            </Stack>
           </Box>
         </Stack>
       </Box>

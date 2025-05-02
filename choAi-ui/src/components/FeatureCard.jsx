@@ -6,18 +6,38 @@ import emailImage from "../assets/Welcome-images/email.jpg";
 import imageImage from "../assets/Welcome-images/images.jpg";
 import createImage from "../assets/Welcome-images/cocreate.jpg";
 import productivityImage from "../assets/Welcome-images/productivity.jpg";
-import { Link } from "react-router-dom";
+import FeaturesPrompt from "../utils/FeaturesPrompt.json";
 
+console.log(FeaturesPrompt);
 const features = [
-  { title: "Help me summarrize", image: askImage },
-  { title: "Let's Cocreate", image: createImage },
-  { title: "Generate Images", image: imageImage },
-  { title: "Be my coding buddy", image: codeImage },
-  { title: "Help me write an email", image: emailImage },
-  { title: "Productivity Recommendation", image: productivityImage },
+  {
+    title: "Summarize This",
+    image: askImage,
+    prompt: `${FeaturesPrompt.summarize.prompt}`,
+  },
+  {
+    title: "Let's Design",
+    image: createImage,
+    prompt: FeaturesPrompt.design.prompt,
+  },
+  {
+    title: "Help me code",
+    image: codeImage,
+    prompt: FeaturesPrompt.code.prompt,
+  },
+  {
+    title: "Draft email",
+    image: emailImage,
+    prompt: FeaturesPrompt.email.prompt,
+  },
+  {
+    title: "Get Productive",
+    image: productivityImage,
+    prompt: FeaturesPrompt.productivity.prompt,
+  },
 ];
 
-const FeatureCard = () => {
+const FeatureCard = ({ onFeatureClick, input }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
@@ -35,11 +55,25 @@ const FeatureCard = () => {
         width: "100%",
         height: isMobile ? "150px" : "220px",
         padding: isMobile ? "0 10px" : "0",
+        "&::-webkit-scrollbar": {
+          width: "8px",
+        },
+        "&::-webkit-scrollbar-track": {
+          background: "transparent",
+        },
+        "&::-webkit-scrollbar-thumb": {
+          background: "transparent",
+        },
       }}
     >
       {features.map((item, key) => (
         <Grid2
           key={key}
+          onClick={() => {
+            console.log(item);
+            onFeatureClick(item.prompt);
+            setInput(item.prompt);
+          }}
           sx={{
             flex: "0 0 auto",
             width: isMobile ? "60px" : "100px",

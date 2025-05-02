@@ -1,47 +1,66 @@
-import { Box, Grid2, IconButton, TextField, Typography } from "@mui/material";
-import React, { useEffect, useState } from "react";
-import KeyboardVoiceIcon from "@mui/icons-material/KeyboardVoice";
-import SendIcon from "@mui/icons-material/Send";
+import {
+  Box,
+  Grid2,
+  Snackbar,
+  Typography,
+  useMediaQuery,
+  useTheme,
+} from "@mui/material";
+import React, { useState } from "react";
 import FeatureCard from "./FeatureCard";
 import { useAuth } from "../hooks/useAuth";
-import { functions } from "../config/firebase";
-import { httpsCallable } from "firebase/functions";
 
-const WelcomeScreen = () => {
-  const [input, setInput] = useState("");
-  const [greeting, setGreeting] = useState("");
-  const [loading, setLoading] = useState(false);
+const WelcomeScreen = ({ name = "", onFeatureClick, input, setInput }) => {
+  const [error, setError] = useState(null);
   const { user } = useAuth();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+  // Adjust this value as needed
 
-  const handleChange = (event) => {
-    setInput(event.target.value);
-  };
-
-  useEffect(() => {
-    async function fetchGreeting() {
-      setLoading(true);
-      try {
-        const getGreetingFunction = httpsCallable(functions, "getGreeting");
-        const clientLocale = navigator.language || navigator.userLanguage;
-        const response = await getGreetingFunction({ locale: clientLocale });
-
-        setGreeting(response.data);
-      } catch (error) {
-        console.error("Error fetching greeting:", error);
-      } finally {
-        setLoading(false);
-      }
+  const formatUsername = (name) => {
+    const names = name.split(" ");
+    let formatName;
+    if (names.length === 1) {
+      formatName = names[0].charAt(0).toUpperCase() + names[0].slice(1);
+    } else if (names.length === 2) {
+      formatName =
+        names[0].charAt(0).toUpperCase() +
+        names[0].slice(1) +
+        " " +
+        names[1].charAt(0).toUpperCase() +
+        names[1].slice(1);
     }
-
-    fetchGreeting();
-  }, []);
+    return formatName;
+  };
 
   return (
     <Grid2
       container
-      sx={{ width: "100%", height: "100%", justifyContent: "center" }}
+      sx={{
+        width: "100%",
+        height: isMobile ? "45vh" : "50vh",
+        justifyContent: "center",
+        overflowY: "hidden",
+        "&:hover": {
+          overflowY: "auto",
+        },
+        "&::-webkit-scrollbar": {
+          width: "4px",
+        },
+        "&::-webkit-scrollbar-track": {
+          background: "transparent",
+        },
+        "&::-webkit-scrollbar-thumb": {
+          background: "rgba(153, 153, 153, 0.1)",
+          borderRadius: "4px",
+          maxHeight: "10px",
+        },
+        "&::-webkit-scrollbar-thumb:hover": {
+          background: "#aaa",
+        },
+      }}
     >
-      <FeatureCard />
+      <FeatureCard onFeatureClick={onFeatureClick} input={input} />
       {/* header section */}
       <Box>
         <Typography
@@ -56,48 +75,25 @@ const WelcomeScreen = () => {
             WebkitBackgroundClip: "text",
             WebkitTextFillColor: "transparent",
           }}
+          aria-label={`Greeting for ${user ? user.displayName : "Guest"}`}
         >
-          {greeting + " " || ""}
-          {user
-            ? user.displayName?.split(" ")[0].toUpperCase()
-            : greeting && "GUEST"}
+          {"Hello"}{" "}
+          {user ? formatUsername(user.displayName) : formatUsername(name)}
         </Typography>
         <Typography
           variant="body2"
+          component="p"
           color="rgba(153, 153, 153, 1)"
-          sx={{ marginTop: -1, fontSize: "0.9rem", textAlign: "center" }}
+          sx={{
+            marginTop: -1,
+            fontSize: "0.9rem",
+            textAlign: "center",
+            textTransform: "none",
+          }}
         >
-          how can I help you?
+          How can I help you?
         </Typography>
       </Box>
-      {/*input section */}
-      <Grid2
-        container
-        gap={1}
-        marginTop={2}
-        sx={{ width: "95%", alignItems: "center", flexWrap: "nowrap" }}
-      >
-        <Grid2 size={11}>
-          <TextField
-            placeholder="AskCho anything"
-            variant="outlined"
-            onChange={handleChange}
-            name="input"
-            value={input}
-            fullWidth
-          />
-        </Grid2>
-        <Grid2>
-          <IconButton>
-            <SendIcon />
-          </IconButton>
-        </Grid2>
-        <Grid2>
-          <IconButton>
-            <KeyboardVoiceIcon />
-          </IconButton>
-        </Grid2>
-      </Grid2>
     </Grid2>
   );
 };

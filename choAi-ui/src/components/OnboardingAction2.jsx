@@ -20,7 +20,7 @@ const OnboardingAction2 = ({ onNext }) => {
           navigate("/get-started");
         }}
       >
-        Try Cho now
+        AskCho Anything
       </Button>
       <ButtonGroup fullWidth variant="contained" sx={{ margin: "10px" }}>
         <Button
@@ -28,14 +28,14 @@ const OnboardingAction2 = ({ onNext }) => {
             navigate("/signup");
           }}
         >
-          Sign up
+          New to AskCho? Sign&nbsp;up
         </Button>
         <Button
           onClick={() => {
             navigate("/signin");
           }}
         >
-          Sign in
+          Already Friends? Sign&nbsp;in
         </Button>
       </ButtonGroup>
     </>

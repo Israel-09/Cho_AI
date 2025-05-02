@@ -28,7 +28,6 @@ const OnboardingPage = () => {
         alignItems: "center",
         justifyContent: "center",
         flexDirection: "column",
-        marginTop: 5,
       }}
     >
       {activeStep === 0 && (

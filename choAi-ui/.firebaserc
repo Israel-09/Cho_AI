@@ -1,5 +1,15 @@
 {
   "projects": {
     "default": "askch0"
-  }
+  },
+  "targets": {
+    "askch0": {
+      "hosting": {
+        "askcho": [
+          "askch0"
+        ]
+      }
+    }
+  },
+  "etags": {}
 }

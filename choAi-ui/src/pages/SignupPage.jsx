@@ -26,6 +26,7 @@ import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import { httpsCallable } from "firebase/functions";
 import { functions } from "../config/firebase";
 import { useAuth } from "../hooks/useAuth";
+import logo from "@/assets/logo.png";
 
 const SignupPage = () => {
   const [form, setForm] = useState({
@@ -141,24 +142,39 @@ const SignupPage = () => {
   return (
     <Container
       maxWidth="md"
-      sx={{ padding: 4, justifyContent: "center", alignItems: "center" }}
+      sx={{
+        padding: "60px 0",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        alignItems: "center",
+        width: "100vw",
+        height: "100vh",
+      }}
     >
-      <Box>
+      <Box component={"img"} src={logo} height={"90px"} />
+      <Box width={"90%"}>
         <Typography
           component="h3"
-          sx={{ fontWeight: "bold", fontSize: "1.2rem", textAlign: "center" }}
+          sx={{ fontWeight: "500", fontSize: "1.2rem", textAlign: "center" }}
         >
-          Create an account with CHO <br />
-          To enjoy it features NON-STOP
+          Create new account
+        </Typography>
+        <Typography
+          component="p"
+          variant="body1"
+          sx={{ fontWeight: "light", fontSize: "1rem", textAlign: "center" }}
+        >
+          Welcome to AskCho, your on-the-go personal assistant.
         </Typography>
       </Box>
 
       {/* Sign up form body */}
       <Grid2
         sx={{
-          marginTop: 6,
+          marginTop: 3,
           alignItems: "center",
-          width: "100%",
+          width: "95%",
           justifyContent: "center",
           flexDirection: isMobile ? "column" : "row",
         }}
@@ -303,7 +319,7 @@ const SignupPage = () => {
             </Link>{" "}
           </Typography>
         </Grid2>
-        <Grid2
+        {/* <Grid2
           size={1}
           display="flex"
           justifyContent="center"
@@ -339,7 +355,7 @@ const SignupPage = () => {
           >
             Continue with Facebook
           </Button>
-        </Grid2>
+        </Grid2> */}
       </Grid2>
     </Container>
   );

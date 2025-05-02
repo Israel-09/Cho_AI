@@ -10,10 +10,11 @@ import {
   Container,
   useTheme,
   useMediaQuery,
+  Grid2,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 
-const PersonaPage = () => {
+const PersonaPage = ({ name }) => {
   const [selectedRole, setSelectedRole] = useState("");
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -24,40 +25,33 @@ const PersonaPage = () => {
   };
 
   const handleSubmit = () => {
-    console.log("Selected Role:", selectedRole);
-    navigate("/chat");
+    navigate("/chat", { state: { name: name } });
   };
 
   const roles = [
     {
       value: "Student",
-      description:
-        "Looking for AI assistance with learning, research, and assignments.",
+      description: "Ace Assignments & Researches with AI.",
     },
     {
       value: "Professional",
-      description:
-        "Need AI insights, productivity tools, or industry-specific guidance.",
+      description: "Boost Productivity with AI.",
     },
     {
       value: "Entrepreneur",
-      description:
-        "Exploring AI for business strategies, automation, and growth.",
+      description: "Grow Your Business with AI.",
     },
     {
       value: "Creative",
-      description:
-        "Seeking AI-powered inspiration for design, writing, and content creation.",
+      description: "Create with AI.",
     },
     {
       value: "Developer",
-      description:
-        "Interested in AI coding assistance, API integrations, and tech solutions.",
+      description: "Code with Ai",
     },
     {
       value: "Casual User",
-      description:
-        "Just exploring AI for general knowledge and fun interactions.",
+      description: "Chat with AI.",
     },
   ];
 
@@ -68,8 +62,8 @@ const PersonaPage = () => {
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        justifyContent: "flex-start",
-        minHeight: "100vh",
+        justifyContent: "center",
+        height: "100vh",
         backgroundColor: "#121212",
         color: "#fff",
         padding: 3,
@@ -90,7 +84,7 @@ const PersonaPage = () => {
               value={role.value}
               control={<Radio sx={{ color: "#fff" }} />}
               label={
-                <Box
+                <Grid2
                   sx={{
                     display: "flex",
                     gap: 1,
@@ -133,7 +127,7 @@ const PersonaPage = () => {
                   >
                     {role.description}
                   </Typography>
-                </Box>
+                </Grid2>
               }
               sx={{ color: "#fff", mb: 1 }}
             />

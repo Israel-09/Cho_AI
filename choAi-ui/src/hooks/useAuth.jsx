@@ -62,6 +62,7 @@ export const AuthProvider = ({ children }) => {
       throw error;
     }
   };
+
   const value = {
     user,
     loading,

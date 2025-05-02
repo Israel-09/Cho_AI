@@ -4,6 +4,7 @@
     "indexes": "firestore.indexes.json"
   },
   "hosting": {
+    "site": "askcho",
     "public": "dist",
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "rewrites": [
@@ -31,7 +32,7 @@
       "port": 5001
     },
     "firestore": {
-      "port": 8080
+      "port": 8090
     },
     "auth": {
       "port": 9099
