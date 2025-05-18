@@ -192,7 +192,7 @@ const AppNavbar = ({
                   alignItems="center"
                   className={navOpen ? "nav-item" : "nav-item nav-item-closed"}
                   color="#ddd"
-                  onClick={() => navigate(`/chat/${item.id}`)}
+                  onClick={() => (window.location.href = `/chat/${item.id}`)}
                   sx={{
                     cursor: "pointer",
                     padding: "5px 10px",
@@ -219,6 +219,7 @@ const AppNavbar = ({
               width: navOpen ? maxWidth - 10 : minWidth - 5,
               overflowY: "hidden",
               position: "absolute",
+
               bottom: 0,
               "&:hover": {
                 overflowY: "auto",
@@ -239,6 +240,7 @@ const AppNavbar = ({
               },
             }}
           >
+            {/* 
             <Stack
               direction="row"
               spacing={1}
@@ -254,7 +256,7 @@ const AppNavbar = ({
               <i class="bx bxs-binoculars"></i>
               <span>Explore</span>
             </Stack>
-            {/* 
+           
               <Stack
                 direction="row"
                 spacing={1}
@@ -265,14 +267,7 @@ const AppNavbar = ({
                 <span>Account</span>
               </Stack> */}
 
-            <Stack
-              sx={{
-                paddingLeft: "7px",
-                marginBottom: "20px",
-                display: navOpen ? "block" : "None",
-              }}
-            >
-              {/* <a href="#" style={{ textDecoration: "none", color: "#fff" }}>
+            {/* <a href="#" style={{ textDecoration: "none", color: "#fff" }}>
                 <Stack
                   direction="row"
                   spacing={1}
@@ -283,40 +278,21 @@ const AppNavbar = ({
                   <span>Terms of use</span>
                 </Stack>
               </a> */}
-              <a href="#" style={{ textDecoration: "none", color: "#fff" }}>
-                <Stack
-                  direction="row"
-                  spacing={1}
-                  alignItems="center"
-                  className={navOpen ? "nav-item" : "nav-item nav-item-closed"}
-                  onClick={() => handlePrivacyDialog()}
-                  sx={{ cursor: "pointer" }}
-                >
-                  <i class="bx bx-lock"></i>
-                  <span>Privacy policy</span>
-                  <PrivacyPolicyDialog
-                    privacyOpen={privacyOpen}
-                    handlePrivacyDialog={handlePrivacyDialog}
-                  />
-                </Stack>
-              </a>
 
-              <Stack
-                direction="row"
-                spacing={1}
-                alignItems="center"
-                className={open ? "nav-item" : "nav-item nav-item-closed"}
-                sx={{ cursor: "pointer" }}
-                onClick={() => handleCookiesDialog()}
-              >
-                <i class="bx bxs-cookie"></i>
-                <span>Cookies Policy</span>
-                <CookiePolicyDialog
-                  cookiesOpen={cookiesOpen}
-                  handleCookiesClose={handleCookiesDialog}
-                  setCookiesOpen={setCookiesOpen}
-                />
-              </Stack>
+            <Stack
+              direction="row"
+              spacing={1}
+              alignItems="center"
+              className={navOpen ? "nav-item" : "nav-item nav-item-closed"}
+              onClick={() => handlePrivacyDialog()}
+              sx={{ cursor: "pointer" }}
+            >
+              <i class="bx bx-lock"></i>
+              <span>Privacy policy</span>
+              <PrivacyPolicyDialog
+                privacyOpen={privacyOpen}
+                handlePrivacyDialog={handlePrivacyDialog}
+              />
             </Stack>
 
             <Stack
@@ -324,24 +300,29 @@ const AppNavbar = ({
               spacing={1}
               alignItems="center"
               className={navOpen ? "nav-item" : "nav-item nav-item-closed"}
+              sx={{ cursor: "pointer" }}
+              onClick={() => handleCookiesDialog()}
+            >
+              <i class="bx bxs-cookie"></i>
+              <span>Cookies Policy</span>
+              <CookiePolicyDialog
+                cookiesOpen={cookiesOpen}
+                handleCookiesClose={handleCookiesDialog}
+                setCookiesOpen={setCookiesOpen}
+              />
+            </Stack>
+
+            <Stack
+              direction="row"
+              spacing={1}
+              alignItems="center"
+              className={navOpen ? "nav-item" : "nav-item nav-item-closed"}
+              sx={{ cursor: "pointer" }}
+              onClick={() => navigate("/contact-us")}
             >
               <i class="bx bx-comment-dots"></i>
               <span>Contact us / Feedback</span>
             </Stack>
-
-            {/* <div>
-                <Stack
-                  direction="row"
-                  spacing={1}
-                  alignItems="center"
-                  className={open ? "nav-item" : "nav-item nav-item-closed"}
-                  sx={{ cursor: "pointer" }}
-                >
-                  <i class="bx bx-exit"></i>
-                  <span>Log out</span>
-                </Stack>
-              </div> */}
-
             <Snackbar
               open={!!snackbarError}
               autoHideDuration={6000}
@@ -359,7 +340,7 @@ const AppNavbar = ({
                 direction="row"
                 spacing={1}
                 alignItems="center"
-                sx={{ color: "#f00" }}
+                sx={{ color: theme.palette.error.main }}
                 className={open ? "nav-item" : "nav-item nav-item-closed"}
                 onClick={handleDeleteConversations}
                 disabled={isProcessing}
@@ -372,7 +353,7 @@ const AppNavbar = ({
                 direction="row"
                 spacing={1}
                 alignItems="center"
-                sx={{ color: "#f00", cursor: "pointer" }}
+                sx={{ color: theme.palette.error.main, cursor: "pointer" }}
                 className={open ? "nav-item" : "nav-item nav-item-closed"}
                 onClick={handleOpenDialog}
                 disabled={isProcessing}

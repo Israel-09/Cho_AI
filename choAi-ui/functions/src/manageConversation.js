@@ -80,14 +80,6 @@ exports.getConversations = functions.https.onCall(async (data, context) => {
           id: doc.id,
           title: doc.data().title || "Untitled",
           createdAt: doc.data().createdAt?.toDate().toISOString() || null,
-          lastMessage: lastMessage
-            ? {
-                sender: lastMessage.sender,
-                text: lastMessage.text,
-                timestamp:
-                  lastMessage.timestamp?.toDate().toISOString() || null,
-              }
-            : null,
         };
       })
     );

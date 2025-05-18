@@ -65,12 +65,13 @@ function Router() {
         <Route path="signin" element={<SigninPage />} />
         <Route path="reset-password" element={<ResetPasswordPage />} />
         {/* <Route path="waitlist" element={<WaitlistPage />} /> */}
-        <Route path="contact-us" element={<ContactUsPage />} />
+
         <Route path="get-started" element={<GetStarted />} />
         <Route path="" />
       </Route>
       <Route path="verify-email" element={<VerifyEmailPage />} />
       <Route path="chat" element={<ChatPage />} />
+      <Route path="contact-us" element={<ContactUsPage />} />
 
       <Route element={<ProtectedRoute />}>
         <Route path="/chat/:conversationId" element={<ChatPage />} />

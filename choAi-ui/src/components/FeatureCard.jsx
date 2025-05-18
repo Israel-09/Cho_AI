@@ -6,20 +6,20 @@ import emailImage from "../assets/Welcome-images/email.jpg";
 import imageImage from "../assets/Welcome-images/images.jpg";
 import createImage from "../assets/Welcome-images/cocreate.jpg";
 import productivityImage from "../assets/Welcome-images/productivity.jpg";
+import translateImage from "../assets/Welcome-images/translate.png";
 import FeaturesPrompt from "../utils/FeaturesPrompt.json";
 
-console.log(FeaturesPrompt);
 const features = [
   {
     title: "Summarize This",
     image: askImage,
     prompt: `${FeaturesPrompt.summarize.prompt}`,
   },
-  {
-    title: "Let's Design",
-    image: createImage,
-    prompt: FeaturesPrompt.design.prompt,
-  },
+  // {
+  //   title: "Let's Design",
+  //   image: createImage,
+  //   prompt: FeaturesPrompt.design.prompt,
+  // },
   {
     title: "Help me code",
     image: codeImage,
@@ -34,6 +34,11 @@ const features = [
     title: "Get Productive",
     image: productivityImage,
     prompt: FeaturesPrompt.productivity.prompt,
+  },
+  {
+    title: "Translator",
+    image: translateImage,
+    prompt: FeaturesPrompt.translate.prompt,
   },
 ];
 
@@ -52,7 +57,6 @@ const FeatureCard = ({ onFeatureClick, input }) => {
         flexWrap: "nowrap",
         justifyContent: "center",
         alignItems: "flex-start",
-        width: "100%",
         height: isMobile ? "150px" : "220px",
         padding: isMobile ? "0 10px" : "0",
         "&::-webkit-scrollbar": {

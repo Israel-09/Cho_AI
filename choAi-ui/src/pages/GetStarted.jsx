@@ -28,17 +28,16 @@ const GetStarted = () => {
   };
 
   const handleNext = () => {
-    console.log("Name:", name);
+    if (isMobile) {
+      navigate("/chat", { state: { name } });
+      return;
+    }
     setError("");
     if (name.trim() === "") {
       setError("Please enter your name.");
       return;
     }
     setShow(false);
-    if (isMobile) {
-      navigate("/chat", { state: { name: name } });
-      return;
-    }
     setTimeout(() => {
       setPage((prev) => (prev == 0 ? 1 : 0));
       setShow(true);

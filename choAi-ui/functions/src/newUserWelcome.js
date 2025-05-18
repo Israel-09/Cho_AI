@@ -13,10 +13,10 @@ const password = process.env.USER_PASS;
 
 // Configure Nodemailer transport
 const transporter = nodemailer.createTransport({
-  service: "gmail", // Use your email service (e.g., Gmail, SendGrid)
+  service: "gmail",
   auth: {
-    user: user, // e.g., "your-email@gmail.com"
-    pass: password, // App-specific password or API key
+    user: user,
+    pass: password,
   },
 });
 
@@ -33,20 +33,29 @@ exports.sendWelcomeEmail = functions.auth.user().onCreate(async (user) => {
     to: email,
     subject: "Welcome to ASKCHO! 🤖!",
     html: `
-      <h1>Hi, ${user.displayName || "User"}!</h1>
-      <p>Welcome to AskCho! 🎉 We're excited to have your on board.</p>
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Welcome to AskCho</title>
+    </head>
+    <body>
+      <h3>Hi, ${user.displayName || "User"}!</h3>
+      <p>Welcome to AskCho! 🎉 We're excited to have you on board.</p>
       <p>As your AI buddy, AskCho is here to assist and support you.</p>
       <p>As your AI buddy, AskCho is here to assist and support you.</p>
-        <h5>Let's Get Started</h5>
-       <p> Whether you're a student, creative, professional, entrepreneur, developer, or just seeking knowledge, AskCho's here to help. Start a chat with your AI buddy now and discover how we can support you! 💬</p>
- Stay Connected
-- Follow AskCho: https://www.instagram.com/askcho.ai?igsh=d3h2aGhoNDBvZnd0&utm_source=qr
-- Need support? [support email]
-Looking forward to chatting with you! 🚀
-Best,
-The AskCho Team
-
-     
+      <h5>Let's Get Started</h5>
+      <p>Whether you're a student, creative, professional, entrepreneur, developer, or just seeking knowledge, AskCho's here to help. Start a chat with your AI buddy now and discover how we can support you! 💬</p>
+      <p><strong>Stay Connected</strong></p>
+      <p>
+        - Follow AskCho: <a href="https://www.instagram.com/askcho.ai?igsh=d3h2aGhoNDBvZnd0&utm_source=qr">https://www.instagram.com/askcho.ai</a><br>
+        - Need support? <a href="mailto:noreply@askcho.com">[support email]</a>
+      </p>
+      <p>Looking forward to chatting with you! 🚀</p>
+      <p>Best,<br>The AskCho Team</p>
+    </body>
+    </html>
     `,
   };
 

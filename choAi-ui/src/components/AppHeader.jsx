@@ -14,33 +14,36 @@ import {
   IconButton,
   Menu,
   MenuItem,
+  Select,
+  FormControl,
+  InputLabel,
   useMediaQuery,
   useTheme,
 } from "@mui/material";
 import logo from "../assets/logo.png"; // Adjust the path as necessary
 import { useNavigate } from "react-router-dom";
-import { AddComment, AddCommentRounded } from "@mui/icons-material";
+import { AddComment } from "@mui/icons-material";
 
-const AppHeader = ({ handleDrawerToggle }) => {
+const AppHeader = ({ handleDrawerToggle, aiMode, setAiMode }) => {
   const { user } = useAuth();
   const theme = useTheme();
   const [logoutConfirm, setLogoutConfirm] = useState(false);
+  const [openSigninDialog, setOpenSigninDialog] = useState(false);
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [anchorEl, setAnchorEl] = useState(null);
+  // State for AI mode
   const open = Boolean(anchorEl);
   const { logout } = useAuth();
-
   const navigate = useNavigate();
 
   const getUserInitials = () => {
-    const names = user?.displayName.split(" ");
-
+    const names = user?.displayName?.split(" ") || [];
     if (names.length > 1) {
       return (
         names[0].charAt(0).toUpperCase() + names[1].charAt(0).toUpperCase()
       );
     } else if (names.length === 1) {
-      return user.displayName.charAt(0).toUpperCase();
+      return names[0].charAt(0).toUpperCase();
     } else {
       return "U";
     }
@@ -64,6 +67,20 @@ const AppHeader = ({ handleDrawerToggle }) => {
     setLogoutConfirm(false);
   };
 
+  // Handle AI mode change
+  const handleAiModeChange = (event) => {
+    setAiMode(event.target.value);
+  };
+
+  const handleFormControlClick = () => {
+    if (!user) {
+      setOpenSigninDialog(true);
+    }
+  };
+
+  const handleCloseSigninDialog = () => {
+    setOpenSigninDialog(false);
+  };
   return (
     <Grid2
       container
@@ -77,33 +94,107 @@ const AppHeader = ({ handleDrawerToggle }) => {
         alignItems: "center",
       }}
     >
-      {isMobile && (
+      {isMobile && user && (
         <Grid2>
           <IconButton onClick={handleDrawerToggle} sx={{ padding: 0 }}>
-            <i class="bx bx-menu-alt-left" style={{ fontSize: "32px" }}></i>
+            <i className="bx bx-menu-alt-left" style={{ fontSize: "32px" }}></i>
           </IconButton>
         </Grid2>
       )}
-      <Grid2 sx={{ cursor: "pointer" }} onClick={() => navigate("/chat")}>
+
+      {/* Clickable Logo */}
+      <Grid2
+        sx={{
+          width: "20",
+          display: "flex",
+          gap: isMobile ? 1 : 2,
+          alignItems: "center",
+        }}
+      >
         <Box
           component="img"
           src={logo}
+          alt="AskCho Logo"
           sx={{
-            height: isMobile ? "50px" : " 70px",
+            height: isMobile ? "50px" : "70px",
             width: "auto",
+            cursor: "pointer",
           }}
+          onClick={() => navigate("/chat")}
         />
+        {/* AI Mode Dropdown */}
+        <FormControl
+          sx={{ minWidth: 120 }}
+          size="small"
+          disabled={!user}
+          onClick={handleFormControlClick}
+        >
+          <Select
+            value={aiMode}
+            onChange={handleAiModeChange}
+            displayEmpty
+            sx={{
+              color: "#fff",
+              fontSize: isMobile ? "0.8rem" : "1rem",
+              backgroundColor: "#171717",
+              borderRadius: "8px",
+              "& .MuiSelect-icon": { color: "#fff" },
+              "& .MuiOutlinedInput-notchedOutline": {
+                borderColor: "transparent",
+              },
+              "&:hover .MuiOutlinedInput-notchedOutline": {
+                borderColor: "transparent",
+              },
+              "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                borderColor: "transparent",
+              },
+            }}
+          >
+            <MenuItem
+              value="chatBuddy"
+              sx={{ fontSize: isMobile ? "0.8rem" : "1rem" }}
+            >
+              Chat Buddy
+            </MenuItem>
+            <MenuItem
+              value="proAssistant"
+              sx={{ fontSize: isMobile ? "0.8rem" : "1rem" }}
+            >
+              Pro Assistant
+            </MenuItem>
+          </Select>
+        </FormControl>
+        <Dialog open={openSigninDialog} onClose={handleCloseSigninDialog}>
+          <DialogTitle>Sign In Required</DialogTitle>
+          <DialogContent>Please sign in to change the AI mode.</DialogContent>
+          <DialogActions>
+            <Button variant="contained" onClick={() => navigate("/signin")}>
+              Sign In
+            </Button>
+            <Button onClick={handleCloseSigninDialog} color="error">
+              Close
+            </Button>
+          </DialogActions>
+        </Dialog>
       </Grid2>
+
       {user ? (
-        <Grid2 container sx={{ gap: 3, alignItems: "flex-start" }}>
+        <Grid2 container sx={{ gap: 2, alignItems: "center" }}>
+          {/* New Chat Icon */}
           <IconButton sx={{ padding: 0 }} onClick={() => navigate("/chat")}>
-            <AddComment sx={{ fontSize: isMobile ? "26px" : "36px" }} />
+            <AddComment
+              sx={{ fontSize: isMobile ? "26px" : "32px", color: "#fff" }}
+            />
           </IconButton>
+
+          {/* Avatar and Menu */}
           <Avatar
             sx={{
               height: isMobile ? "26px" : "32px",
               width: isMobile ? "26px" : "32px",
               cursor: "pointer",
+              backgroundColor: "#1a1a1a",
+              color: "#fff",
               ":hover": {
                 boxShadow: "0 0 8px rgba(202, 198, 198, 0.3)",
               },
@@ -134,7 +225,6 @@ const AppHeader = ({ handleDrawerToggle }) => {
                 boxShadow: "0 4px 8px rgba(53, 53, 53, 0.2)",
                 border: "0.01rem solid #fff",
               },
-
               "& .MuiMenuItem-root": {
                 fontSize: isMobile ? "0.8rem" : "1rem",
                 padding: isMobile ? "5px 10px" : "10px 20px",
@@ -143,9 +233,9 @@ const AppHeader = ({ handleDrawerToggle }) => {
           >
             <MenuItem onClick={handleClickOpen} sx={{ color: "#ef0909" }}>
               <i
-                class="bx bx-exit"
+                className="bx bx-exit"
                 style={{ fontSize: "20px", paddingRight: "10px" }}
-              />{" "}
+              />
               Sign Out
             </MenuItem>
           </Menu>
@@ -178,6 +268,11 @@ const AppHeader = ({ handleDrawerToggle }) => {
         </Grid2>
       ) : (
         <Grid2 sx={{ display: "flex", gap: 2, height: "100%" }}>
+          <IconButton sx={{ padding: 0 }} onClick={() => navigate("/chat")}>
+            <AddComment
+              sx={{ fontSize: isMobile ? "26px" : "32px", color: "#fff" }}
+            />
+          </IconButton>
           <Button
             variant="contained"
             size={isMobile ? "small" : "medium"}

@@ -5,14 +5,12 @@ import {
   signInWithEmailAndPassword,
   signOut,
 } from "firebase/auth";
-import { useNavigate } from "react-router-dom";
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
@@ -28,16 +26,6 @@ export const AuthProvider = ({ children }) => {
 
     return () => unsubscribe();
   }, []); // Empty dependency array ensures this runs only once on mount
-
-  // useEffect(() => {
-  //   if (!loading) {
-  //     if (user) {
-  //       navigate("chat");
-  //     } else {
-  //       navigate("signin");
-  //     }
-  //   }
-  // }, [user, loading, navigate]);
 
   const login = async (email, password) => {
     try {

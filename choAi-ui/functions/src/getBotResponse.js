@@ -14,43 +14,39 @@ if (!admin.apps.length) {
 }
 
 exports.getBotResponse = functions.https.onCall(async (data, context) => {
-  const userMessage = data.data.text;
-  const conversationId = data.data.conversationId;
+  const {
+    text,
+    conversationId,
+    messages,
+    aiMode = "chatBuddy",
+    regenerate,
+  } = data.data;
+
   const userId = data.auth ? data.auth.uid : null;
 
-  if (!userMessage) {
+  if (!text) {
     throw new functions.https.HttpsError(
       "invalid-argument",
       "Message text is required"
     );
   }
+  const systemPrompt =
+    aiMode === "proAssistant"
+      ? "You’re AskCho, a helpful AI assistant from the AskCho Team. Provide clear, concise responses that balance helpfulness and brevity—aim for average length, not too long or too short. Offer relevant info and be resourceful, but save extra details for when the user asks for more."
+      : "You are a friendly AI assistant. Your name is AskCho. Developed by AskCho Team. All you responses should be as creative and fun and short as possible, always provide very useful summary. Always make user feel like they are talking to a friend. You are a friendly and helpful assistant. You are here to help the user with their questions and tasks. You are not allowed to give any medical, legal, or financial advice. You are not allowed to give any personal opinions or beliefs. You are not allowed to give any information that is not related to the user's question or task. Use emoji in response but not too much";
 
   try {
-    let history = [];
-    if (userId && conversationId) {
-      const messagesRef = db
-        .collection("users")
-        .doc(userId)
-        .collection("conversations")
-        .doc(conversationId)
-        .collection("messages")
-        .orderBy("timestamp", "asc");
-
-      const messagesSnapshot = await messagesRef.get();
-      if (!messagesSnapshot.exists) {
-        history = [];
-      }
-
-      history = messagesSnapshot.docs
-        .map((doc) => {
-          const { sender, text } = doc.data();
-          return {
-            role: sender === "user" ? "user" : "model",
-            parts: [{ text: text }],
-          };
-        })
-        .filter((entry) => entry !== null);
-    }
+    const history = Array.isArray(messages)
+      ? messages
+          .filter((message) => message?.sender && message?.text)
+          .map((message) => {
+            const { sender, text } = message;
+            return {
+              role: sender === "user" ? "user" : "model",
+              parts: [{ text: text }],
+            };
+          })
+      : [];
 
     const chat = genAI.chats.create({
       model: "gemini-2.0-flash",
@@ -58,14 +54,16 @@ exports.getBotResponse = functions.https.onCall(async (data, context) => {
       config: {
         temperature: 0.5,
         maxTokens: 1000,
-        systemInstruction:
-          "You are a friendly AI assistant.  Your name is AskCho. Developed by AskCho Team. All you responses should be as creative and a bit fun and short as possible. Always make user feel like they are talking to a friend. You are a friendly and helpful assistant. You are here to help the user with their questions and tasks. You are not allowed to give any medical, legal, or financial advice. You are not allowed to give any personal opinions or beliefs. You are not allowed to give any information that is not related to the user's question or task.",
+        systemInstruction: systemPrompt,
       },
     });
 
+    // Send the message to Gemini
+
     const result = await chat.sendMessage({
-      message: userMessage,
+      message: text,
     });
+
     const responseText = result.text;
 
     // Store messages only for authenticated users with a valid conversationId
@@ -86,11 +84,13 @@ exports.getBotResponse = functions.https.onCall(async (data, context) => {
       }
 
       // Store user message
-      await conversationRef.collection("messages").add({
-        sender: "user",
-        text: userMessage,
-        timestamp: Timestamp.now(),
-      });
+      if (!regenerate) {
+        await conversationRef.collection("messages").add({
+          sender: "user",
+          text: text,
+          timestamp: Timestamp.now(),
+        });
+      }
 
       // Store bot response
       await conversationRef.collection("messages").add({
@@ -99,10 +99,13 @@ exports.getBotResponse = functions.https.onCall(async (data, context) => {
         timestamp: Timestamp.now(),
       });
     }
-    console.log("I delivered", responseText);
+
     return { response: responseText };
   } catch (error) {
-    console.error("Error in getBotResponse:", error);
+    console.error("getBotResponse: Error:", {
+      message: error.message,
+      stack: error.stack,
+    });
     throw new functions.https.HttpsError(
       "internal",
       "Unable to get response from Gemini"

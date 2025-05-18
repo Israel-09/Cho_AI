@@ -101,7 +101,7 @@ const CookiePolicyDialog = ({
           {/* Header Section */}
           <Box mb={isMobile ? 2 : 3}>
             <Typography {...typographyStyles.h5} component="h1">
-              AskCho Technology Limited
+              AskCho Technology
             </Typography>
             <Typography {...typographyStyles.subtitle2} sx={{ mt: 1 }}>
               Effective Date: 1st May, 2025
@@ -114,11 +114,10 @@ const CookiePolicyDialog = ({
               1. Introduction
             </Typography>
             <Typography {...typographyStyles.body1} paragraph>
-              This Cookie Policy explains how AskCho Technology Limited ("we,"
-              "us," or "our") uses cookies and similar tracking technologies
-              when you interact with our AI Chat Box ("Chat Box"). By using the
-              Chat Box, you agree to the use of cookies as described in this
-              policy.
+              This Cookie Policy explains how AskCho Technology ("we," "us," or
+              "our") uses cookies and similar tracking technologies when you
+              interact with our AI Chat Box ("Chat Box"). By using the Chat Box,
+              you agree to the use of cookies as described in this policy.
             </Typography>
           </Box>
 

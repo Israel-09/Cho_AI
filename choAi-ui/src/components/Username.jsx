@@ -1,4 +1,5 @@
 import {
+  Box,
   Button,
   Container,
   TextField,
@@ -7,6 +8,7 @@ import {
   useTheme,
 } from "@mui/material";
 import React, { useState } from "react";
+import logo from "@/assets/logo.png";
 
 const Username = ({ handleNext, name, handleChange }) => {
   const theme = useTheme();

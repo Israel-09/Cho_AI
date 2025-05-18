@@ -41,6 +41,7 @@ const WelcomeScreen = ({ name = "", onFeatureClick, input, setInput }) => {
         height: isMobile ? "45vh" : "50vh",
         justifyContent: "center",
         overflowY: "hidden",
+        flexDirection: "column",
         "&:hover": {
           overflowY: "auto",
         },

@@ -28,6 +28,9 @@ const PersonaPage = ({ name }) => {
     navigate("/chat", { state: { name: name } });
   };
 
+  if (isMobile) {
+    navigate("/chat", { state: { name: name } });
+  }
   const roles = [
     {
       value: "Student",

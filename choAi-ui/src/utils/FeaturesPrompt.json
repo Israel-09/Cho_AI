@@ -76,5 +76,8 @@
         "assistant": "Summary: The team reviewed Q2 goals, discussed timeline delays on Project X, agreed to hire a frontend intern, and scheduled the next sync for Tuesday."
       }
     ]
+  },
+  "translate": {
+    "prompt": "You are a highly skilled translator. I will provide you with text to translate. First, ask me what language the text is in and what language I want it translated to. Then, provide the translation. Wait for my input."
   }
 }

@@ -8,7 +8,6 @@ import Conversation from "../components/Conversation";
 import InputSection from "../components/InputSection";
 import { httpsCallable } from "firebase/functions";
 import { functions } from "../config/firebase";
-
 import {
   sendGeminiMessage,
   initializeConversation,
@@ -26,9 +25,14 @@ const getConversation = httpsCallable(functions, "getConversation");
 
 const ChatPage = () => {
   const { conversationId } = useParams();
-
+  const [aiMode, setAiMode] = useState(() => {
+    const storedMode = localStorage.getItem("aiMode");
+    return storedMode ? JSON.parse(storedMode) : "proAssistant";
+  });
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([]);
+  const [responseHistory, setResponseHistory] = useState([]); // Store bot responses for the last user message
+  const [currentResponseIndex, setCurrentResponseIndex] = useState(0); // Track current response
   const [isChatting, setIsChatting] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -36,9 +40,9 @@ const ChatPage = () => {
   const [newConversationTitle, setNewConversationTitle] = useState("");
   const [conversationMetadata, setConversationMetadata] = useState(null);
   const [currentConversationId, setCurrentConversationId] =
-    useState(conversationId); // Track current conversationId
+    useState(conversationId);
   const [navOpen, setNavOpen] = useState(false);
-  // Get conversationId from URL
+  const [isSending, setIsSending] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -48,9 +52,10 @@ const ChatPage = () => {
   const { name } = location.state || {};
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
-  // Handle sending messages (both initial and subsequent)
   const handleSend = async (value) => {
-    if (!value.trim()) return; // Prevent sending empty messages
+    if (!value.trim()) return;
+    setResponseHistory([]);
+    setCurrentResponseIndex(0);
     try {
       setIsChatting(true);
       await sendGeminiMessage(
@@ -59,16 +64,18 @@ const ChatPage = () => {
         messages,
         setMessages,
         setLoading,
+        aiMode,
         currentConversationId,
         (newConversationId, title) => {
-          // Update conversationId and redirect
           setCurrentConversationId(newConversationId);
           setConversations((prev) => [
             { id: newConversationId, title: title || "New Conversation" },
             ...prev,
           ]);
           navigate(`/chat/${newConversationId}`);
-        }
+        },
+        false,
+        setResponseHistory
       );
     } catch (error) {
       console.error("Error sending message:", error);
@@ -84,7 +91,10 @@ const ChatPage = () => {
     );
   }, [conversationId]);
 
-  // Fetch conversation and messages
+  useEffect(() => {
+    localStorage.setItem("aiMode", JSON.stringify(aiMode));
+  }, [aiMode]);
+
   useEffect(() => {
     if (user && conversationId) {
       console.log("ChatPage: Fetching conversation for", conversationId);
@@ -96,20 +106,27 @@ const ChatPage = () => {
             title: conversation.title,
             createdAt: conversation.createdAt,
           });
-          setMessages(conversation.messages || []); // Set messages from response
-          console.log(
-            "ChatPage: Conversation fetched:",
-            conversation.conversationMetadata
-          );
+          setMessages(conversation.messages || []);
+          console.log("ChatPage: Conversation fetched:", conversation);
+          const lastBotMessage = conversation.messages
+            ?.slice()
+            .reverse()
+            .find((msg) => msg.sender === "bot");
+          if (lastBotMessage) {
+            setResponseHistory([lastBotMessage]);
+            setCurrentResponseIndex(0);
+          }
+          console.log("ChatPage: Conversation fetched:", conversation);
         })
+
         .catch((error) => {
           console.error("Error fetching conversation:", error);
           setError(error.message || "Failed to load conversation");
-          setMessages([]); // Ensure empty array on error
+          setMessages([]);
         });
     } else {
       setConversationMetadata(null);
-      setMessages([]); // Clear messages for no user or conversationId
+      setMessages([]);
       console.log("ChatPage: No conversation fetched", {
         user: user?.uid || "none",
         conversationId,
@@ -127,30 +144,27 @@ const ChatPage = () => {
         setError
       );
     } else {
-      setMessages([]); // Clear messages for unauthenticated users or no conversationId
+      setMessages([]);
     }
     return () => unsubscribe();
   }, [user, conversationId]);
 
   useEffect(() => {
     if (user) {
-      console.log("ChatPage: Fetching conversations for user:", user.uid);
       getConversations()
         .then((result) => {
           setConversations(result.data.conversations);
         })
         .catch((error) => {
-          const fetchedConversations = result.data.conversations || [];
-
-          setConversations(fetchedConversations);
+          console.error("Error fetching conversations:", error);
+          setConversations([]);
         });
     } else {
       setConversations([]);
       console.log("ChatPage: No user, clearing conversations");
     }
-  }, []);
+  }, [user]);
 
-  // Handle creating a new conversation
   const handleCreateConversation = async () => {
     if (!user) {
       setError("You must be logged in to create a conversation");
@@ -176,7 +190,53 @@ const ChatPage = () => {
     }
   };
 
-  // Handle starting a conversation from WelcomeScreen
+  const handleRegenerate = async () => {
+    if (isSending) return;
+    setLoading(true);
+
+    const lastBotMessageIndex = messages
+      .slice()
+      .reverse()
+      .findIndex((msg) => msg.sender === "bot");
+    if (lastBotMessageIndex === -1) {
+      setLoading(false);
+      return;
+    }
+
+    const lastBotPosition = messages.length - 1 - lastBotMessageIndex;
+    if (
+      lastBotPosition === 0 ||
+      messages[lastBotPosition - 1].sender !== "user"
+    ) {
+      setLoading(false);
+      return;
+    }
+
+    const lastUserMessage = messages[lastBotPosition - 1];
+    setIsSending(true);
+
+    try {
+      await sendGeminiMessage(
+        lastUserMessage.text || "",
+        setInput,
+        messages,
+        setMessages,
+        setLoading,
+        aiMode,
+        currentConversationId,
+        setCurrentConversationId,
+        true, // isRegenerate
+        setResponseHistory
+      );
+      setCurrentResponseIndex((prev) => responseHistory.length); // Move to the latest response
+    } catch (error) {
+      setError(`Failed to regenerate response: ${error.message}`);
+    } finally {
+      setIsSending(false);
+      setLoading(false);
+    }
+  };
+
   const handleStartConversation = (firstInput) => {
     if (firstInput.trim()) {
       handleSend(firstInput);
@@ -184,9 +244,7 @@ const ChatPage = () => {
   };
 
   const handleDrawerToggle = () => {
-    console.log("ChatPage: Drawer toggled", navOpen);
     setNavOpen(!navOpen);
-    console.log("ChatPage: Drawer toggled", navOpen);
   };
 
   if (user && !user.emailVerified) {
@@ -203,7 +261,7 @@ const ChatPage = () => {
       }}
     >
       <Box>
-        {(!isMobile || navOpen) && (
+        {(!isMobile || navOpen) && user && (
           <AppNavbar
             conversations={conversations}
             conversationId={conversationId}
@@ -224,9 +282,11 @@ const ChatPage = () => {
           paddingTop: 2,
         }}
       >
-        <AppHeader handleDrawerToggle={handleDrawerToggle} />
-
-        {/* Main content area */}
+        <AppHeader
+          handleDrawerToggle={handleDrawerToggle}
+          aiMode={aiMode}
+          setAiMode={setAiMode}
+        />
         <Box
           sx={{
             flex: 1,
@@ -237,6 +297,7 @@ const ChatPage = () => {
             direction: "rtl",
             paddingTop: theme.spacing(4),
             boxSizing: "border-box",
+
             "> *": {
               direction: "ltr",
               textAlign: "center",
@@ -264,9 +325,13 @@ const ChatPage = () => {
               <Conversation
                 messages={messages}
                 setMessages={setMessages}
+                responseHistory={responseHistory}
+                currentResponseIndex={currentResponseIndex}
+                setCurrentResponseIndex={setCurrentResponseIndex}
                 loading={loading}
                 error={error}
                 setError={setError}
+                onRegenerate={handleRegenerate}
               />
             ) : (
               <WelcomeScreen
@@ -286,6 +351,7 @@ const ChatPage = () => {
             >
               <InputSection
                 value={input}
+                setInput={setInput}
                 onChange={(e) => setInput(e.target.value)}
                 onEnter={handleSend}
               />

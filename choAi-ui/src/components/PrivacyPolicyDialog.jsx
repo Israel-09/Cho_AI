@@ -98,7 +98,7 @@ const PrivacyPolicyDialog = ({ privacyOpen, handlePrivacyDialog }) => {
           {/* Header Section */}
           <Box mb={isMobile ? 2 : 3}>
             <Typography {...typographyStyles.h5} component="h1">
-              AskCho Technology Limited
+              AskCho Technology
             </Typography>
             <Typography {...typographyStyles.subtitle2} sx={{ mt: 1 }}>
               Effective Date: 1st May, 2025
@@ -127,7 +127,7 @@ const PrivacyPolicyDialog = ({ privacyOpen, handlePrivacyDialog }) => {
               2. Data Controller
             </Typography>
             <Typography {...typographyStyles.body1} paragraph>
-              AskCho Technology Limited is the data controller responsible for
+              AskCho Technology is the data controller responsible for
               processing your personal data. If you have any questions, you can
               contact us at:{" "}
               <a
