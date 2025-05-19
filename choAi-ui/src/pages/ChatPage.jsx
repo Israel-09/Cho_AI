@@ -8,6 +8,9 @@ import Conversation from "../components/Conversation";
 import InputSection from "../components/InputSection";
 import { httpsCallable } from "firebase/functions";
 import { functions } from "../config/firebase";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+// import { storage } from "../config/firebase";
+
 import {
   sendGeminiMessage,
   initializeConversation,
@@ -52,7 +55,8 @@ const ChatPage = () => {
   const { name } = location.state || {};
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
-  const handleSend = async (value) => {
+  const handleSend = async (value, files = []) => {
+    console.log("Files", files);
     if (!value.trim()) return;
     setResponseHistory([]);
     setCurrentResponseIndex(0);
@@ -75,12 +79,37 @@ const ChatPage = () => {
           navigate(`/chat/${newConversationId}`);
         },
         false,
-        setResponseHistory
+        setResponseHistory,
+        files
       );
     } catch (error) {
       console.error("Error sending message:", error);
       setError("Failed to send message");
     }
+  };
+
+  const handleFileUpload = async (files) => {
+    if (!user) return;
+
+    const uploadedFiles = await Promise.all(
+      files.map(async (file) => {
+        const storageRef = ref(storage, `users/${user.uid}/files/${file.name}`);
+        await uploadBytes(storageRef, file);
+        const downloadURL = await getDownloadURL(storageRef);
+        return { name: file.name, url: downloadURL, type: file.type };
+      })
+    );
+
+    setMessages((prev) => [
+      ...prev,
+      ...uploadedFiles.map((file) => ({
+        sender: "user",
+        text: "",
+        fileName: file.name,
+        fileUrl: file.url,
+        fileType: file.type,
+      })),
+    ]);
   };
 
   useEffect(() => {
@@ -226,7 +255,8 @@ const ChatPage = () => {
         currentConversationId,
         setCurrentConversationId,
         true, // isRegenerate
-        setResponseHistory
+        setResponseHistory,
+        []
       );
       setCurrentResponseIndex((prev) => responseHistory.length); // Move to the latest response
     } catch (error) {
@@ -354,6 +384,7 @@ const ChatPage = () => {
                 setInput={setInput}
                 onChange={(e) => setInput(e.target.value)}
                 onEnter={handleSend}
+                onFileUpload={handleFileUpload}
               />
             </Box>
           </Container>

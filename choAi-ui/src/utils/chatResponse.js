@@ -25,9 +25,10 @@ export const sendGeminiMessage = async (
   conversationId = null,
   setConversationId,
   isRegenerate = false,
-  setResponseHistory
+  setResponseHistory,
+  files = []
 ) => {
-  if (!input.trim() && !isRegenerate) return;
+  if (!input.trim() && files.length === 0 && !isRegenerate) return;
 
   setLoading(true);
 
@@ -136,6 +137,13 @@ export const sendGeminiMessage = async (
       setInput("");
     }
 
+    // Prepare file metadata for the backend
+    const fileMetadata = files.map((file) => ({
+      name: file.name,
+      url: file.url,
+      type: file.type,
+    }));
+
     // Get bot response
     const response = await getGeminiResponse({
       text: input,
@@ -143,6 +151,7 @@ export const sendGeminiMessage = async (
       messages,
       aiMode: aiMode,
       regenerate: isRegenerate,
+      files: fileMetadata,
     });
 
     const botMessage = {
@@ -230,6 +239,9 @@ export const initializeConversation = (
           timestamp:
             data.timestamp?.toDate() || data.createdAt?.toDate() || new Date(),
           isNew: false,
+          fileName: data.fileName || null,
+          fileUrl: data.fileUrl || null,
+          fileType: data.fileType || null,
         };
       });
       console.log("initializeConversation: Mapped messages:", messages);

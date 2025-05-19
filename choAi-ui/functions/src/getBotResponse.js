@@ -20,11 +20,12 @@ exports.getBotResponse = functions.https.onCall(async (data, context) => {
     messages,
     aiMode = "chatBuddy",
     regenerate,
+    files = [],
   } = data.data;
 
   const userId = data.auth ? data.auth.uid : null;
 
-  if (!text) {
+  if (!text && files.length === 0) {
     throw new functions.https.HttpsError(
       "invalid-argument",
       "Message text is required"
@@ -57,13 +58,28 @@ exports.getBotResponse = functions.https.onCall(async (data, context) => {
         systemInstruction: systemPrompt,
       },
     });
+    console.log("files", files);
+    // Prepare the prompt with file information
+    let prompt = text || "User uploaded files for analysis.";
+    if (files.length > 0) {
+      const fileDescriptions = await Promise.all(
+        files.map(async (file) => {
+          const { name, url, type } = file;
+          if (type.startsWith("image/")) {
+            return `Image file: ${name} (URL: ${url}) - Please describe this image.`;
+          } else if (type === "application/pdf" || type === "text/plain") {
+            return `Document file: ${name} (URL: ${url}) - Please summarize the content of this document.`;
+          }
+          return `File: ${name} (URL: ${url})`;
+        })
+      );
+      prompt += "\n\nFiles:\n" + fileDescriptions.join("\n");
+    }
 
     // Send the message to Gemini
-
     const result = await chat.sendMessage({
-      message: text,
+      message: prompt,
     });
-
     const responseText = result.text;
 
     // Store messages only for authenticated users with a valid conversationId
@@ -90,6 +106,18 @@ exports.getBotResponse = functions.https.onCall(async (data, context) => {
           text: text,
           timestamp: Timestamp.now(),
         });
+
+        // Store file metadata
+        for (const file of files) {
+          await conversationRef.collection("messages").add({
+            sender: "user",
+            text: "",
+            fileName: file.name,
+            fileUrl: file.url,
+            fileType: file.type,
+            timestamp: Timestamp.now(),
+          });
+        }
       }
 
       // Store bot response

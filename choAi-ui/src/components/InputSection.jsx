@@ -6,6 +6,8 @@ import {
   useMediaQuery,
   useTheme,
   Typography,
+  Box,
+  Chip,
 } from "@mui/material";
 import {
   AttachFile,
@@ -13,6 +15,7 @@ import {
   MicOff,
   Send,
   Send as SendIcon,
+  Close,
 } from "@mui/icons-material";
 
 // Cross-browser SpeechRecognition
@@ -25,7 +28,18 @@ const InputSection = ({ value, setInput, onChange, onEnter, onFileUpload }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [recognition, setRecognition] = useState(null);
   const [isSupported, setIsSupported] = useState(true);
+  const [selectedFiles, setSelectedFiles] = useState([]);
   const fileInputRef = useRef(null);
+
+  const MAX_FILES = 10;
+  const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+  const ALLOWED_TYPES = [
+    "image/jpeg",
+    "image/png",
+    "image/gif",
+    "application/pdf",
+    "text/plain",
+  ];
 
   useEffect(() => {
     if (!SpeechRecognition) {
@@ -87,22 +101,79 @@ const InputSection = ({ value, setInput, onChange, onEnter, onFileUpload }) => {
 
   // Handle file selection
   const handleFileChange = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      onFileUpload(file); // Pass the file to ChatPage.jsx
-      event.target.value = null; // Reset file input
+    const files = Array.from(event.target.files);
+    if (files.length === 0) return;
+
+    // Check total number of files
+    const totalFiles = selectedFiles.length + files.length;
+    if (totalFiles > MAX_FILES) {
+      alert(`You can only upload a maximum of ${MAX_FILES} files at a time.`);
+      event.target.value = null;
+      return;
     }
+
+    // Validate each file
+    const validFiles = [];
+    const invalidFiles = [];
+
+    files.forEach((file) => {
+      const isValidType = ALLOWED_TYPES.includes(file.type);
+      const isValidSize = file.size <= MAX_FILE_SIZE;
+
+      if (isValidType && isValidSize) {
+        validFiles.push(file);
+      } else {
+        invalidFiles.push({
+          name: file.name,
+          reason: !isValidType
+            ? "Invalid file type (only images and documents allowed)"
+            : "File size exceeds 2MB",
+        });
+      }
+    });
+
+    // Show alerts for invalid files
+    if (invalidFiles.length > 0) {
+      const errorMessage = invalidFiles
+        .map((file) => `${file.name}: ${file.reason}`)
+        .join("\n");
+      alert(`Some files were not added:\n${errorMessage}`);
+    }
+
+    if (validFiles.length > 0) {
+      setSelectedFiles((prev) => [...prev, ...validFiles]);
+      onFileUpload(validFiles); // Pass valid files to parent
+    }
+
+    event.target.value = null; // Reset file input
+  };
+
+  // Handle file removal
+  const handleRemoveFile = (index) => {
+    setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
   // Handle Enter key press
   const handleKeyDown = (event) => {
     if (isLargeScreen && event.key === "Enter" && !event.shiftKey) {
-      event.preventDefault(); // Prevent newline in TextField
-      onEnter(value); // Trigger submission
-      setIsRecording(false); // Stop recording if Enter is pressed
+      event.preventDefault();
+
+      onEnter(value, selectedFiles); // Pass files along with the message
+      setIsRecording(false);
       if (recognition) {
         recognition.stop();
       }
+      setSelectedFiles([]); // Clear files after sending
+    }
+  };
+
+  // Handle Send button click
+  const handleSend = () => {
+    if (value || selectedFiles.length > 0) {
+      console.log("Selected files:", selectedFiles);
+      onEnter(value, selectedFiles);
+
+      setSelectedFiles([]); // Clear files after sending
     }
   };
 
@@ -114,6 +185,36 @@ const InputSection = ({ value, setInput, onChange, onEnter, onFileUpload }) => {
       sx={{ width: "95%", alignItems: "center", flexWrap: "nowrap" }}
     >
       <Grid2 size={12}>
+        {/* Display selected files as chips */}
+        {selectedFiles.length > 0 && (
+          <Box
+            sx={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 1,
+              mb: 1,
+              maxHeight: "100px",
+              overflowY: "auto",
+            }}
+          >
+            {selectedFiles.map((file, index) => (
+              <Chip
+                key={index}
+                label={file.name}
+                onDelete={() => handleRemoveFile(index)}
+                deleteIcon={<Close />}
+                sx={{
+                  backgroundColor: theme.palette.grey[700],
+                  color: "#fff",
+                  "& .MuiChip-deleteIcon": {
+                    color: "#fff",
+                  },
+                }}
+              />
+            ))}
+          </Box>
+        )}
+
         <TextField
           multiline
           placeholder={
@@ -141,6 +242,15 @@ const InputSection = ({ value, setInput, onChange, onEnter, onFileUpload }) => {
             "& .MuiInputLabel-root": { color: "#fff" },
           }}
           InputProps={{
+            // startAdornment: (
+            //   <IconButton
+            //     title="Attach files"
+            //     onClick={() => fileInputRef.current.click()}
+            //     sx={{ color: "#fff" }}
+            //   >
+            //     <AttachFile />
+            //   </IconButton>
+            // ),
             endAdornment: (
               <>
                 <input
@@ -165,7 +275,7 @@ const InputSection = ({ value, setInput, onChange, onEnter, onFileUpload }) => {
                     }}
                   >
                     {value && !isRecording ? (
-                      <Send onClick={() => onEnter(value)} title="Send" />
+                      <Send onClick={handleSend} title="Send" />
                     ) : (
                       <Mic onClick={toggleRecording} title="Use voice input" />
                     )}

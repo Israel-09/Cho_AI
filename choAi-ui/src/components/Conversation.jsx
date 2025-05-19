@@ -17,8 +17,8 @@ import {
   Refresh,
   VolumeUp,
   VolumeOff,
-  ArrowBack,
-  ArrowForward,
+  ArrowBackIos as ArrowBack,
+  ArrowForwardIos as ArrowForward,
 } from "@mui/icons-material";
 import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
@@ -142,7 +142,7 @@ const Conversation = ({
       };
       utterance.onerror = (event) => {
         console.error("SpeechSynthesis error:", event.error);
-        setError("Failed to read aloud");
+        // setError("Failed to read aloud");
       };
       utterance.onstart = () => {
         setSpeakingMessageId(messageId);
@@ -176,57 +176,19 @@ const Conversation = ({
           ...messages[lastBotPosition],
           text: responseHistory[currentResponseIndex].text,
           displayText: responseHistory[currentResponseIndex].text,
-          isNew: false, // Avoid re-animating
         },
         ...messages.slice(lastBotPosition + 1),
       ];
     }
 
+    // Set animatedMessages with full text immediately for all messages
     setAnimatedMessages(
-      updatedMessages.map((newMsg) => ({
-        ...newMsg,
-        displayText: newMsg.sender === "bot" && newMsg.isNew ? "" : newMsg.text,
-        isAnimated: newMsg.sender !== "bot" || !newMsg.isNew,
-        isNew: newMsg.isNew || false,
+      updatedMessages.map((msg) => ({
+        ...msg,
+        displayText: msg.text, // Always show full text immediately
       }))
     );
   }, [messages, responseHistory, currentResponseIndex]);
-
-  useEffect(() => {
-    const botMessages = animatedMessages.filter(
-      (msg) => msg.sender === "bot" && !msg.isAnimated && msg.isNew
-    );
-
-    if (botMessages.length === 0) return;
-
-    const intervalMs = 50;
-    const charsPerStep = 10;
-
-    const intervals = botMessages.map((botMessage) => {
-      const fullText = botMessage.text;
-      const interval = setInterval(() => {
-        setAnimatedMessages((prev) =>
-          prev.map((msg) => {
-            if (msg === botMessage) {
-              const currentLength = msg.displayText.length;
-              if (currentLength < fullText.length) {
-                return {
-                  ...msg,
-                  displayText: fullText.slice(0, currentLength + charsPerStep),
-                };
-              }
-              return { ...msg, displayText: fullText, isAnimated: true };
-            }
-            return msg;
-          })
-        );
-      }, intervalMs);
-
-      return interval;
-    });
-
-    return () => intervals.forEach((interval) => clearInterval(interval));
-  }, [animatedMessages]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -427,7 +389,7 @@ const Conversation = ({
                                 backgroundColor:
                                   currentResponseIndex === 0
                                     ? "transparent"
-                                    : "rgba(255, 255, 255, 0.1)",
+                                    : "rgba(255, 255, 245, 0.1)",
                               },
                             }}
                           >
