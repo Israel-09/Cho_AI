@@ -13,6 +13,7 @@ import LoadingScreen from "./components/LoadingScreen";
 import GetStarted from "./pages/GetStarted";
 
 import VerifyEmailPage from "./pages/VerifyEmailPage";
+import AccountSettings from "./pages/AccountSettings";
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -76,6 +77,7 @@ function Router() {
       <Route element={<ProtectedRoute />}>
         <Route path="/chat/:conversationId" element={<ChatPage />} />
         <Route path="explore" element={<ExplorePage />} />
+        <Route path="account-details" element={<AccountSettings />} />
       </Route>
 
       {/* Redirect all other paths to the home page */}

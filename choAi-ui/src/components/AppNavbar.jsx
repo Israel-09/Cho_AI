@@ -14,6 +14,7 @@ import {
   DialogActions,
   TextField,
   Button,
+  CircularProgress,
 } from "@mui/material";
 import {
   AccountCircleOutlined as AccountIcon,
@@ -45,7 +46,7 @@ const isEmpty = (obj) => {
 };
 
 const AppNavbar = ({
-  conversations = [],
+  conversations,
   conversationId,
   handleDrawerToggle,
   navOpen,
@@ -128,7 +129,7 @@ const AppNavbar = ({
           width: navOpen ? maxWidth : minWidth,
           backgroundColor: "rgb(24, 23, 23)",
           animation: "fadeIn 0.3s",
-          transition: "width 0.2s ease-in-out",
+          transition: "width 0.1s ease-in-out ",
           paddingX: 1,
           zIndex: 1,
         }}
@@ -179,6 +180,20 @@ const AppNavbar = ({
             >
               History
             </Typography>
+            {conversations[0] === "no conversations yet" && (
+              <>
+                <Box
+                  sx={{
+                    textAlign: "center",
+                    marginTop: 5,
+                    width: "100%",
+                    height: "150%",
+                  }}
+                >
+                  <CircularProgress />
+                </Box>
+              </>
+            )}
 
             {isEmpty(conversations) ? (
               <NoHistory />
@@ -221,6 +236,7 @@ const AppNavbar = ({
               position: "absolute",
 
               bottom: 0,
+              left: 0,
               "&:hover": {
                 overflowY: "auto",
               },
@@ -256,29 +272,9 @@ const AppNavbar = ({
               <i class="bx bxs-binoculars"></i>
               <span>Explore</span>
             </Stack>
+           */}
+
            
-              <Stack
-                direction="row"
-                spacing={1}
-                alignItems="center"
-                className={ navOpen? "nav-item" : "nav-item nav-item-closed"}
-              >
-                <i class="bx bx-user-circle"></i>
-                <span>Account</span>
-              </Stack> */}
-
-            {/* <a href="#" style={{ textDecoration: "none", color: "#fff" }}>
-                <Stack
-                  direction="row"
-                  spacing={1}
-                  alignItems="center"
-                  className={navOpen ? "nav-item" : "nav-item nav-item-closed"}
-                >
-                  <i class="bx bx-file"></i>
-                  <span>Terms of use</span>
-                </Stack>
-              </a> */}
-
             <Stack
               direction="row"
               spacing={1}

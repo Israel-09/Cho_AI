@@ -26,11 +26,13 @@ export const sendGeminiMessage = async (
   setConversationId,
   isRegenerate = false,
   setResponseHistory,
-  files = []
+  files = [],
+  deepSearch = false
 ) => {
   if (!input.trim() && files.length === 0 && !isRegenerate) return;
 
   setLoading(true);
+  console.log("sendGeminiMessage: Files to send:", files);
 
   try {
     let currentConversationId = conversationId;
@@ -49,6 +51,9 @@ export const sendGeminiMessage = async (
         `,
         conversationId: null,
         aiMode: "proAssistant",
+        regenerate: false,
+        files: [],
+        deepSearch: false,
       });
 
       const result = await createConversation({
@@ -144,6 +149,9 @@ export const sendGeminiMessage = async (
       type: file.type,
     }));
 
+    console.log("sendGeminiMessage: File metadata prepared:", fileMetadata);
+
+    console.log("Messages", messages);
     // Get bot response
     const response = await getGeminiResponse({
       text: input,
@@ -152,6 +160,7 @@ export const sendGeminiMessage = async (
       aiMode: aiMode,
       regenerate: isRegenerate,
       files: fileMetadata,
+      deepSearch: deepSearch,
     });
 
     const botMessage = {
@@ -221,10 +230,6 @@ export const initializeConversation = (
     messagesQuery,
     (snapshot) => {
       if (snapshot.empty) {
-        console.log(
-          "initializeConversation: No messages found for conversation:",
-          conversationId
-        );
         setMessages([]);
         setError(null);
         return;
@@ -232,19 +237,16 @@ export const initializeConversation = (
 
       const messages = snapshot.docs.map((msgDoc) => {
         const data = msgDoc.data();
-        console.log("initializeConversation: Message data:", data);
         return {
           sender: data.sender || "unknown",
           text: data.text || data.message || "",
           timestamp:
             data.timestamp?.toDate() || data.createdAt?.toDate() || new Date(),
           isNew: false,
-          fileName: data.fileName || null,
-          fileUrl: data.fileUrl || null,
-          fileType: data.fileType || null,
+          files: data.files || null,
         };
       });
-      console.log("initializeConversation: Mapped messages:", messages);
+      console.log("initializeConversation: Messages loaded:", messages);
       setMessages(messages);
       setError(null);
     },

@@ -57,7 +57,7 @@ const FeatureCard = ({ onFeatureClick, input }) => {
         flexWrap: "nowrap",
         justifyContent: "center",
         alignItems: "flex-start",
-        height: isMobile ? "150px" : "220px",
+        height: "fit-content",
         padding: isMobile ? "0 10px" : "0",
         "&::-webkit-scrollbar": {
           width: "8px",
@@ -76,7 +76,6 @@ const FeatureCard = ({ onFeatureClick, input }) => {
           onClick={() => {
             console.log(item);
             onFeatureClick(item.prompt);
-            setInput(item.prompt);
           }}
           sx={{
             flex: "0 0 auto",

@@ -157,6 +157,8 @@ exports.getConversation = functions.https.onCall(async (data, context) => {
     const messages = messagesSnapshot.docs.map((msgDoc) => ({
       sender: msgDoc.data().sender,
       text: msgDoc.data().text,
+      files: msgDoc.data().files || null,
+      isNew: false, // Assuming no new messages for this fetch
       timestamp:
         msgDoc.data().timestamp?.toDate().toISOString() ||
         new Date().toISOString(),

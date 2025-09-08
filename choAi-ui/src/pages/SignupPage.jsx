@@ -27,6 +27,7 @@ import { httpsCallable } from "firebase/functions";
 import { functions } from "../config/firebase";
 import { useAuth } from "../hooks/useAuth";
 import logo from "@/assets/logo.png";
+import { signInWithGoogle } from "../utils/authManager";
 
 const SignupPage = () => {
   const [form, setForm] = useState({
@@ -319,7 +320,7 @@ const SignupPage = () => {
             </Link>{" "}
           </Typography>
         </Grid2>
-        {/* <Grid2
+        <Grid2
           size={1}
           display="flex"
           justifyContent="center"
@@ -331,22 +332,23 @@ const SignupPage = () => {
           size={isMobile ? 12 : 5}
           sx={{ display: "flex", flexDirection: "column", gap: 3 }}
         >
-          <Button
+          {/* <Button
             variant="contained"
             startIcon={<AppleIcon />}
             margin="normal"
             sx={{ fontWeight: "600" }}
           >
             Continue with Apple
-          </Button>
+          </Button> */}
           <Button
             variant="contained"
             startIcon={<GoogleIcon />}
             sx={{ fontWeight: "600" }}
+           onClick={signInWithGoogle}
           >
             Continue with Google
           </Button>
-          <Button
+          {/* <Button
             variant="contained"
             startIcon={
               <FacebookIcon sx={{ width: isMobile ? "10px" : "5px" }} />
@@ -354,8 +356,8 @@ const SignupPage = () => {
             sx={{ fontWeight: "600" }}
           >
             Continue with Facebook
-          </Button>
-        </Grid2> */}
+          </Button> */}
+        </Grid2>
       </Grid2>
     </Container>
   );

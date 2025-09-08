@@ -27,6 +27,22 @@ import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
+import ArticleIcon from "@mui/icons-material/Article";
+import { useAuth } from "../hooks/useAuth";
+import { doc, setDoc, getDoc } from "firebase/firestore";
+import { auth, db } from "../config/firebase";
+
+// Styled component for links
+const Link = styled("a")(({ theme }) => ({
+  color: theme.palette.primary.main,
+  textDecoration: "underline",
+  "&:hover": {
+    textDecoration: "none",
+    color: theme.palette.primary.dark,
+  },
+  target: "_blank",
+  rel: "noopener noreferrer",
+}));
 
 const Conversation = ({
   messages,
@@ -45,37 +61,30 @@ const Conversation = ({
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [snackBarMessage, setSnackBarMessage] = useState(null);
   const [snackBarOpen, setSnackBarOpen] = useState(false);
+  const [voices, setVoices] = useState([]);
+  const [preferredVoice, setPreferredVoice] = useState("");
+  const { user } = useAuth();
+
+  // State for modal management
+  const [selectedFileForModal, setSelectedFileForModal] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const CodeBlock = styled(Box)(({ theme }) => ({
     backgroundColor: theme.palette.grey[900],
-    borderRadius: "13px",
+    borderRadius: "8px",
     padding: theme.spacing(1),
     margin: theme.spacing(2, 0),
-    overflowX: "auto",
-    overflowY: "auto",
-    maxWidth: "100%",
-    maxHeight: "300px",
+    overflow: "hidden",
+    width: "100%",
+    maxHeight: "80vh",
     whiteSpace: "pre",
-    "&::-webkit-scrollbar": {
-      width: "4px",
-      height: "4px",
-    },
-    "&::-webkit-scrollbar-track": {
-      background: "transparent",
-    },
-    "&::-webkit-scrollbar-thumb": {
-      background: "#555",
-      borderRadius: "4px",
-    },
-    "&::-webkit-scrollbar-thumb:hover": {
-      background: "#aaa",
-    },
   }));
 
   const InlineCode = styled("code")(({ theme }) => ({
     fontWeight: "bold",
-    backgroundColor: theme.palette.grey[800],
-    borderRadius: 2,
+    backgroundColor: "#282A2C",
+    color: "#bcbcbc",
+    borderRadius: 5,
     padding: "2px 4px",
     whiteSpace: "normal",
     wordBreak: "break-word",
@@ -101,7 +110,7 @@ const Conversation = ({
   const Image = styled("img")(({ theme }) => ({
     maxWidth: "100%",
     height: "auto",
-    borderRadius: theme.shape.borderRadius,
+    borderRadius: "theme.shape.borderRadius",
     margin: theme.spacing(1, 0),
   }));
 
@@ -111,6 +120,19 @@ const Conversation = ({
       lineHeight: "1.5",
     },
   }));
+
+  // Load available voices for "Read Aloud"
+  useEffect(() => {
+    const loadVoices = () => {
+      const availableVoices = window.speechSynthesis.getVoices();
+
+      if (availableVoices.length > 0) {
+        setVoices(availableVoices);
+      }
+    };
+    loadVoices();
+    window.speechSynthesis.onvoiceschanged = loadVoices;
+  }, []);
 
   const handleCopy = (text) => {
     navigator.clipboard
@@ -126,6 +148,21 @@ const Conversation = ({
       });
   };
 
+  // Fetch user preferences from Firestore
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const userDoc = doc(db, "users", user.uid);
+      const docSnap = await getDoc(userDoc);
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        setPreferredVoice(data.preferredVoice || "");
+        console.log("AccountSettings: User data fetched");
+      }
+    };
+
+    fetchUserData();
+  }, [user]);
+
   const toggleReadAloud = (messageId, text) => {
     if (speakingMessageId === messageId) {
       window.speechSynthesis.cancel();
@@ -134,6 +171,12 @@ const Conversation = ({
     } else {
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
+      const voice = voices.find((v) => v.name === preferredVoice);
+      console.log("Using preferred voice:", preferredVoice);
+      if (voice) {
+        utterance.voice = voice;
+        console.log("Using preferred voice:", voices);
+      }
       utterance.lang = "en-NG";
       utterance.pitch = 0.6;
       utterance.onend = () => {
@@ -176,6 +219,7 @@ const Conversation = ({
           ...messages[lastBotPosition],
           text: responseHistory[currentResponseIndex].text,
           displayText: responseHistory[currentResponseIndex].text,
+          files: responseHistory[currentResponseIndex].files || [],
         },
         ...messages.slice(lastBotPosition + 1),
       ];
@@ -214,11 +258,23 @@ const Conversation = ({
     }
   };
 
+  // Function to open the modal with the selected file
+  const openFileModal = (file) => {
+    setSelectedFileForModal(file);
+    setIsModalOpen(true);
+  };
+
+  // Function to close the modal
+  const closeFileModal = () => {
+    setSelectedFileForModal(null);
+    setIsModalOpen(false);
+  };
+
   return (
     <Container
       maxWidth="md"
       sx={{
-        height: "90%",
+        height: "68vh",
         display: "flex",
         flexDirection: "column",
         padding: 0,
@@ -286,6 +342,7 @@ const Conversation = ({
                                     background: "none",
                                     whiteSpace: "pre",
                                     overflowX: "auto",
+                                    overflowY: "auto",
                                   }}
                                 >
                                   {String(children).replace(/\n$/, "")}
@@ -307,44 +364,124 @@ const Conversation = ({
                         inlineMath({ node, children, ...props }) {
                           return <Math {...props}>{children}</Math>;
                         },
+                        a({ node, children, ...props }) {
+                          return (
+                            <Link target="_blank" {...props}>
+                              {children}
+                            </Link>
+                          );
+                        },
                       }}
                     >
                       {message.displayText}
                     </ReactMarkdown>
-                  ) : message.fileUrl ? (
+                  ) : message.files ? (
                     <>
-                      {message.fileUrl.includes("image") ? (
-                        <Image src={message.fileUrl} alt={message.fileName} />
-                      ) : (
-                        <a
-                          href={message.fileUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{ color: "#6B5B95" }}
-                        >
-                          {message.fileName || "View File"}
-                        </a>
-                      )}
-                      {message.text && <Box sx={{ mt: 1 }}>{message.text}</Box>}
+                      <Box
+                        sx={{
+                          display: "flex",
+                          gap: "8px",
+                          marginBottom: "8px",
+                          width: "100%",
+                          justifyContent: "flex-end",
+                          alignItems: "center",
+                        }}
+                      >
+                        {message.files.map((file, fileIndex) => {
+                          return (
+                            <Box
+                              key={fileIndex}
+                              sx={{
+                                height: "70px",
+                                width: "200px",
+                                background: "#282A2C",
+                                borderRadius: "8px",
+                                padding: "8px",
+                                display: "flex",
+                                justifyContent: "center",
+                                alignItems: "center",
+                                cursor: "pointer",
+                                "&:hover": {
+                                  backgroundColor: "#3a3b3c",
+                                },
+                              }}
+                              onClick={() => openFileModal(file)}
+                            >
+                              <Box>
+                                <ArticleIcon sx={{ fontSize: "1.5rem" }} />
+                              </Box>
+                              <Box
+                                width={"80%"}
+                                sx={{ marginLeft: "5px", padding: 0 }}
+                              >
+                                <Typography
+                                  sx={{
+                                    textOverflow: "ellipsis",
+                                    overflow: "hidden",
+                                    whiteSpace: "nowrap",
+                                    padding: 0,
+                                    margin: 0,
+                                  }}
+                                >
+                                  {file.name}
+                                </Typography>
+                                <Typography
+                                  variant="caption"
+                                  sx={{
+                                    fontSize: "0.7rem",
+                                    color: "#aaa",
+                                    padding: 0,
+                                    margin: 0,
+                                  }}
+                                >
+                                  {file.type.split("/")[1]}
+                                </Typography>
+                              </Box>
+                            </Box>
+                          );
+                        })}
+                      </Box>
+                      <Box
+                        sx={{
+                          backgroundColor: "#333",
+                          padding: "8px",
+                          borderRadius: "8px 0px 8px 8px",
+                          width: "fit-content",
+                          float: "right",
+                        }}
+                      >
+                        <Typography sx={{}}>{message.text}</Typography>
+                      </Box>
                     </>
                   ) : (
-                    message.displayText
+                    <Typography
+                      sx={{
+                        color: "#fff",
+                        fontSize: "0.9rem",
+                      }}
+                    >
+                      {message.text}
+                    </Typography>
                   )
                 }
                 sx={{
-                  background:
-                    message.sender === "user" ? "rgb(61, 61, 61)" : "",
                   borderRadius: "8px",
                   padding: message.sender === "user" ? "8px 12px" : "2px 4px",
                   maxWidth: "fit-content",
-                  wordWrap: "break-word",
-                  fontSize: "14px",
-                  color: "#fff",
+                  fontSize: "0.9rem",
+                  color: "#efefef",
+                  display: "flex",
+                  gap: "8px",
                 }}
               />
               {message.sender === "bot" && (
                 <Box
-                  sx={{ display: "flex", gap: 1, mt: 0, alignItems: "center" }}
+                  sx={{
+                    display: "flex",
+                    gap: 1,
+                    mt: 0,
+                    alignItems: "center",
+                  }}
                 >
                   <IconButton
                     title="Copy"
@@ -376,7 +513,11 @@ const Conversation = ({
                       </IconButton>
                       {responseHistory.length > 1 && (
                         <Box
-                          sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1,
+                          }}
                         >
                           <IconButton
                             onClick={handlePrevious}

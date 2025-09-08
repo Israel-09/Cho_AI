@@ -1,5 +1,6 @@
 import {
   Box,
+  Container,
   Grid2,
   Snackbar,
   Typography,
@@ -34,14 +35,15 @@ const WelcomeScreen = ({ name = "", onFeatureClick, input, setInput }) => {
   };
 
   return (
-    <Grid2
+    <Container
       container
       sx={{
         width: "100%",
-        height: isMobile ? "45vh" : "50vh",
-        justifyContent: "center",
-        overflowY: "hidden",
+        paddingTop: 2,
+        display: "flex",
         flexDirection: "column",
+        gap: 2,
+        justifyContent: "space-between",
         "&:hover": {
           overflowY: "auto",
         },
@@ -95,7 +97,7 @@ const WelcomeScreen = ({ name = "", onFeatureClick, input, setInput }) => {
           How can I help you?
         </Typography>
       </Box>
-    </Grid2>
+    </Container>
   );
 };
 

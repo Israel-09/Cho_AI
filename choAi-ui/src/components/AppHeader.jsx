@@ -231,6 +231,13 @@ const AppHeader = ({ handleDrawerToggle, aiMode, setAiMode }) => {
               },
             }}
           >
+            <MenuItem onClick={() => navigate("/account-details")}>
+              <i
+                className="bx bx-user"
+                style={{ fontSize: "20px", paddingRight: "10px" }}
+              />
+              My Account
+            </MenuItem>
             <MenuItem onClick={handleClickOpen} sx={{ color: "#ef0909" }}>
               <i
                 className="bx bx-exit"

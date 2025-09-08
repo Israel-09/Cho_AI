@@ -10,7 +10,9 @@ if (!admin.apps.length) {
 
 // Configure Nodemailer
 const transporter = nodemailer.createTransport({
-
+  host: "smtp.hostinger.com",
+  port: 465,
+  secure: true,
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
@@ -30,7 +32,7 @@ exports.sendContactEmail = functions.https.onCall(async (data, context) => {
 
   const mailOptions = {
     from: `"${name}" <${process.env.EMAIL_USER}>`,
-    to: "noreply@askcho.ai", // Replace with your support email
+    to: "hello@askcho.ai", 
     replyTo: email,
     subject: `Contact Us: ${subject}`,
     html: `

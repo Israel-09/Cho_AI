@@ -9,7 +9,7 @@ import InputSection from "../components/InputSection";
 import { httpsCallable } from "firebase/functions";
 import { functions } from "../config/firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-// import { storage } from "../config/firebase";
+import { storage } from "../config/firebase";
 
 import {
   sendGeminiMessage,
@@ -39,11 +39,12 @@ const ChatPage = () => {
   const [isChatting, setIsChatting] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [conversations, setConversations] = useState([]);
+  const [conversations, setConversations] = useState(["no conversations yet"]);
   const [newConversationTitle, setNewConversationTitle] = useState("");
   const [conversationMetadata, setConversationMetadata] = useState(null);
   const [currentConversationId, setCurrentConversationId] =
     useState(conversationId);
+  const [searchSelected, setSearchSelected] = useState(false);
   const [navOpen, setNavOpen] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const navigate = useNavigate();
@@ -56,7 +57,6 @@ const ChatPage = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
   const handleSend = async (value, files = []) => {
-    console.log("Files", files);
     if (!value.trim()) return;
     setResponseHistory([]);
     setCurrentResponseIndex(0);
@@ -80,7 +80,8 @@ const ChatPage = () => {
         },
         false,
         setResponseHistory,
-        files
+        files,
+        searchSelected
       );
     } catch (error) {
       console.error("Error sending message:", error);
@@ -96,28 +97,16 @@ const ChatPage = () => {
         const storageRef = ref(storage, `users/${user.uid}/files/${file.name}`);
         await uploadBytes(storageRef, file);
         const downloadURL = await getDownloadURL(storageRef);
+        console.log("File uploaded:", file.name, downloadURL);
         return { name: file.name, url: downloadURL, type: file.type };
       })
     );
 
-    setMessages((prev) => [
-      ...prev,
-      ...uploadedFiles.map((file) => ({
-        sender: "user",
-        text: "",
-        fileName: file.name,
-        fileUrl: file.url,
-        fileType: file.type,
-      })),
-    ]);
+    return uploadedFiles;
   };
 
   useEffect(() => {
     setCurrentConversationId(conversationId || null);
-    console.log(
-      "ChatPage: Updated currentConversationId:",
-      conversationId || null
-    );
   }, [conversationId]);
 
   useEffect(() => {
@@ -126,7 +115,6 @@ const ChatPage = () => {
 
   useEffect(() => {
     if (user && conversationId) {
-      console.log("ChatPage: Fetching conversation for", conversationId);
       getConversation({ conversationId })
         .then((result) => {
           const { conversation } = result.data;
@@ -136,7 +124,7 @@ const ChatPage = () => {
             createdAt: conversation.createdAt,
           });
           setMessages(conversation.messages || []);
-          console.log("ChatPage: Conversation fetched:", conversation);
+          console.log("ChatPage: Fetched conversation", conversation.messages);
           const lastBotMessage = conversation.messages
             ?.slice()
             .reverse()
@@ -145,7 +133,6 @@ const ChatPage = () => {
             setResponseHistory([lastBotMessage]);
             setCurrentResponseIndex(0);
           }
-          console.log("ChatPage: Conversation fetched:", conversation);
         })
 
         .catch((error) => {
@@ -186,12 +173,13 @@ const ChatPage = () => {
         })
         .catch((error) => {
           console.error("Error fetching conversations:", error);
-          setConversations([]);
+          setConversations(["no conversations yet"]);
         });
     } else {
-      setConversations([]);
+      setConversations(["no conversations yet"]);
       console.log("ChatPage: No user, clearing conversations");
     }
+    console.log(conversations);
   }, [user]);
 
   const handleCreateConversation = async () => {
@@ -256,7 +244,8 @@ const ChatPage = () => {
         setCurrentConversationId,
         true, // isRegenerate
         setResponseHistory,
-        []
+        lastUserMessage.files || [],
+        searchSelected
       );
       setCurrentResponseIndex((prev) => responseHistory.length); // Move to the latest response
     } catch (error) {
@@ -317,15 +306,11 @@ const ChatPage = () => {
           aiMode={aiMode}
           setAiMode={setAiMode}
         />
-        <Box
+        <Container
           sx={{
             flex: 1,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "flex-start",
             direction: "rtl",
-            paddingTop: theme.spacing(4),
+            paddingTop: theme.spacing(1),
             boxSizing: "border-box",
 
             "> *": {
@@ -333,7 +318,12 @@ const ChatPage = () => {
               textAlign: "center",
             },
             width: "100%",
-            overflowY: "auto",
+            height: "90vh",
+            position: "relative",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: isChatting,
           }}
         >
           <Container
@@ -341,14 +331,13 @@ const ChatPage = () => {
             maxWidth="lg"
             fixed
             sx={{
-              paddingTop: 2,
               left: minWidth,
-              height: "90%",
+              height: "100%",
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
-              justifyContent: "center",
               paddingLeft: 0,
+              justifyContent: "center",
             }}
           >
             {isChatting || conversationId ? (
@@ -373,10 +362,10 @@ const ChatPage = () => {
             )}
             <Box
               sx={{
-                padding: "2 0",
                 display: "flex",
                 justifyContent: "center",
                 width: "100%",
+                height: "20%",
               }}
             >
               <InputSection
@@ -385,10 +374,12 @@ const ChatPage = () => {
                 onChange={(e) => setInput(e.target.value)}
                 onEnter={handleSend}
                 onFileUpload={handleFileUpload}
+                searchSelected={searchSelected}
+                setSearchSelected={setSearchSelected}
               />
             </Box>
           </Container>
-        </Box>
+        </Container>
       </Box>
     </Box>
   );
