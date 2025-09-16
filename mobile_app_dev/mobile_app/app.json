@@ -1,0 +1,56 @@
+{
+  "scheme": "acme",
+  "userInterfaceStyle": "automatic",
+  "orientation": "default",
+  "web": {
+    "output": "static"
+  },
+  "plugins": [
+    [
+      "expo-router",
+      {
+        "origin": "https://n"
+      }
+    ]
+  ],
+  "name": "mobile_app",
+  "slug": "mobile_app",
+  "fonts": [
+    {
+      "asset": "./assets/fonts/PublicSans-Black.ttf",
+      "name": "Black"
+    },
+    {
+      "asset": "./assets/fonts/PublicSans-Bold.ttf",
+      "name": "Bold"
+    },
+    {
+      "asset": "./assets/fonts/PublicSans-ExtraBold.ttf",
+      "name": "ExtraBold"
+    },
+    {
+      "asset": "./assets/fonts/PublicSans-ExtraLight.ttf",
+      "name": "ExtraLight"
+    },
+    {
+      "asset": "./assets/fonts/PublicSans-Light.ttf",
+      "name": "Light"
+    },
+    {
+      "asset": "./assets/fonts/PublicSans-Medium.ttf",
+      "name": "Medium"
+    },
+    {
+      "asset": "./assets/fonts/PublicSans-Regular.ttf",
+      "name": "Regular"
+    },
+    {
+      "asset": "./assets/fonts/PublicSans-SemiBold.ttf",
+      "name": "SemiBold"
+    },
+    {
+      "asset": "./assets/fonts/PublicSans-Thin.ttf",
+      "name": "Thin"
+    }
+  ]
+}
