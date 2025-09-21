@@ -52,5 +52,20 @@
       "asset": "./assets/fonts/PublicSans-Thin.ttf",
       "name": "Thin"
     }
-  ]
+  ],
+  "expo": {
+    "android": {
+      "package": "com.israel_91.mobile_app"
+    },
+    "plugins": [
+      "expo-router"
+    ],
+    "owner": "israel_91",
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "61784ff4-f96d-47c2-8866-f4a17527217e"
+      }
+    }
+  }
 }

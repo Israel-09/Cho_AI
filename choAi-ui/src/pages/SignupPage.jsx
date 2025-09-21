@@ -344,7 +344,7 @@ const SignupPage = () => {
             variant="contained"
             startIcon={<GoogleIcon />}
             sx={{ fontWeight: "600" }}
-           onClick={signInWithGoogle}
+            onClick={signInWithGoogle}
           >
             Continue with Google
           </Button>

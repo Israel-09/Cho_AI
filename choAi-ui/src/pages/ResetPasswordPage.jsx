@@ -77,6 +77,7 @@ const ResetPasswordPage = () => {
       }
     }
   };
+
   const handleClose = (event, reason) => {
     if (reason === "clickaway") {
       return;

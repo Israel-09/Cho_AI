@@ -7,6 +7,7 @@ import {
   Pressable,
   ActivityIndicator,
   KeyboardAvoidingView,
+  ScrollView,
 } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import Logo from "../../../assets/logo.png";
@@ -14,6 +15,7 @@ import { useEffect, useState } from "react";
 import Icon from "react-native-vector-icons/AntDesign";
 import { Link } from "expo-router";
 import { useAuth } from "../../hooks/useAuth";
+import LoadingScreen from "../../components/LoadingScreen";
 
 const login = () => {
   const [hidePassword, setHidePassword] = useState(true);
@@ -53,19 +55,21 @@ const login = () => {
 
   return (
     <SafeAreaProvider className="flex-1 ">
+      {loading && (<LoadingScreen visible={loading} />)}
       <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
         {loading && (
           <View className="absolute inset-0 bg-black bg-opacity-50 justify-center items-center z-50">
             <ActivityIndicator size="large" color="#ffffff" />
           </View>
         )}
-        <View className="flex-1 bg-black  pt-5  items-center">
+        <ScrollView
+          className="flex-1 bg-black  pt-5"
+          contentContainerStyle={{ alignItems: "center" }}
+          keyboardShouldPersistTaps="handled"
+        >
           <View className="items-center mb-10 ">
             <Image source={Logo} className="w-40 h-40" resizeMode="contain" />
           </View>
-          {/* <Text className="text-[3rem] text-white text-center font-medium">
-          Sign In
-        </Text> */}
           <View className="mb-5 px-4 bg-[#1f1f1f99] py-3 w-[80%]">
             <Text className="text-white text-center font-medium text-xl">
               Sign in with your email here
@@ -151,7 +155,7 @@ const login = () => {
               CONTINUE WITH GOOGLE
             </Text>
           </TouchableOpacity>
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaProvider>
   );
