@@ -83,7 +83,7 @@ const Home = () => {
             </View>
           ))}
         </ScrollView>
-        <View className="h-[100px] bg-yellow-400 justify-center items-center">
+        <View className="h-[100px] justify-center items-center">
           <InputSection
             input={input}
             setInput={setInput}

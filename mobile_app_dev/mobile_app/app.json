@@ -13,7 +13,7 @@
       }
     ]
   ],
-  "name": "mobile_app",
+  "name": "AskCho",
   "slug": "mobile_app",
   "fonts": [
     {
@@ -57,9 +57,7 @@
     "android": {
       "package": "com.israel_91.mobile_app"
     },
-    "plugins": [
-      "expo-router"
-    ],
+    "plugins": ["expo-router"],
     "owner": "israel_91",
     "extra": {
       "router": {},
