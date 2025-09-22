@@ -17,15 +17,17 @@
     "userInterfaceStyle": "automatic",
     "orientation": "default",
     "icon": "./assets/logo.png",
-    "android": {
-      "package": "com.israel_91.mobile_app"
-    },
-    "plugins": ["expo-router"],
+    "plugins": [
+      "expo-router"
+    ],
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "265cca43-8357-49a3-9c95-9f2cc60e39cf"
+        "projectId": "0b15e71c-3def-4010-8ec9-27d0399db65b"
       }
+    },
+    "android": {
+      "package": "com.askcho.askcho"
     }
   }
 }
