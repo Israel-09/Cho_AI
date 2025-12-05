@@ -132,11 +132,7 @@ exports.getConversation = functions.https.onCall(async (data, context) => {
   }
 
   try {
-    const conversationRef = db
-      .collection("users")
-      .doc(userId)
-      .collection("conversations")
-      .doc(conversationId);
+    const conversationRef = db.collection("conversations").doc(conversationId);
 
     const conversationDoc = await conversationRef.get();
 
@@ -151,7 +147,7 @@ exports.getConversation = functions.https.onCall(async (data, context) => {
     // Fetch all messages in the conversation
     const messagesSnapshot = await conversationRef
       .collection("messages")
-      .orderBy("timestamp", "asc")
+      .orderBy("createdAt", "asc")
       .get();
 
     const messages = messagesSnapshot.docs.map((msgDoc) => ({

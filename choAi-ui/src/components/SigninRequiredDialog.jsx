@@ -6,6 +6,7 @@ import {
   DialogTitle,
 } from "@mui/material";
 import React from "react";
+import { useNavigate } from "react-router-dom";
 
 const SigninRequiredDialog = ({
   openSigninDialog,
@@ -15,6 +16,7 @@ const SigninRequiredDialog = ({
   const handleCloseSigninDialog = () => {
     setOpenSigninDialog(false);
   };
+  const navigate = useNavigate();
 
   return (
     <Dialog open={openSigninDialog} onClose={handleCloseSigninDialog}>

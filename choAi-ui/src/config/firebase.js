@@ -21,14 +21,14 @@ const functions = getFunctions(app);
 const analytics = getAnalytics(app);
 const storage = getStorage(app);
 
-// if (import.meta.env.MODE === "development") {
-//   connectAuthEmulator(auth, "http://localhost:9099");
+if (import.meta.env.MODE === "development") {
+  connectAuthEmulator(auth, "http://localhost:9099");
 
-//   connectFirestoreEmulator(db, "localhost", 8180);
+  connectFirestoreEmulator(db, "localhost", 8180);
 
-//   connectStorageEmulator(storage, "localhost", 9199);
+  connectStorageEmulator(storage, "localhost", 9199);
 
-//   connectFunctionsEmulator(functions, "localhost", 5001);
-// }
+  connectFunctionsEmulator(functions, "localhost", 5001);
+}
 
 export { auth, db, functions, storage };

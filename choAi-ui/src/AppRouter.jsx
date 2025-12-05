@@ -14,6 +14,7 @@ import GetStarted from "./pages/GetStarted";
 
 import VerifyEmailPage from "./pages/VerifyEmailPage";
 import AccountSettings from "./pages/AccountSettings";
+import ResearchAssistantPage from "./pages/ResearchAssistantPage";
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -78,8 +79,8 @@ function Router() {
         <Route path="/chat/:conversationId" element={<ChatPage />} />
         <Route path="explore" element={<ExplorePage />} />
         <Route path="account-details" element={<AccountSettings />} />
+        <Route path="research-assistant" element={<ResearchAssistantPage />} />
       </Route>
-
       {/* Redirect all other paths to the home page */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

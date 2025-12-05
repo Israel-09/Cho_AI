@@ -7,8 +7,10 @@
   align-items: center;
   border-radius: 13px;
   padding: 5px 18px;
-  color: #fff;
+  color: #ffffff;
   text-decoration: none;
+  font-weight: 400;
+  mask-image: linear-gradient(to right, #1e1e1e 70%, transparent 100%);
 }
 
 .nav-item i {
@@ -24,6 +26,5 @@
 }
 
 .nav-item:hover {
-  background-color: rgba(50, 50, 50, 1);
-  color: #000;
+  background-color: rgba(50, 50, 50, 0.5);
 }

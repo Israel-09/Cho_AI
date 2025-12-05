@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useAuth } from "../hooks/useAuth";
+import { FaPenToSquare } from "react-icons/fa6";
 import {
   Avatar,
   Box,
@@ -22,11 +23,22 @@ import {
 } from "@mui/material";
 import logo from "../assets/logo.png"; // Adjust the path as necessary
 import { useNavigate } from "react-router-dom";
-import { AddComment } from "@mui/icons-material";
+import { AddComment, MenuRounded } from "@mui/icons-material";
+import useChatStore from "../hooks/chatState";
+import { createNewConversation } from "../utils/chatResponse";
 
-const AppHeader = ({ handleDrawerToggle, aiMode, setAiMode }) => {
+const AppHeader = ({
+  aiMode,
+  handleAiModeChange,
+  setCurrentConversationId,
+}) => {
   const { user } = useAuth();
   const theme = useTheme();
+
+  const toggleNav = useChatStore((state) => state.toggleNav);
+  const navOpen = useChatStore((state) => state.navOpen);
+  const resetChatState = useChatStore((state) => state.resetChatState);
+  const chatOption = useChatStore((state) => state.chatOption);
   const [logoutConfirm, setLogoutConfirm] = useState(false);
   const [openSigninDialog, setOpenSigninDialog] = useState(false);
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
@@ -67,11 +79,6 @@ const AppHeader = ({ handleDrawerToggle, aiMode, setAiMode }) => {
     setLogoutConfirm(false);
   };
 
-  // Handle AI mode change
-  const handleAiModeChange = (event) => {
-    setAiMode(event.target.value);
-  };
-
   const handleFormControlClick = () => {
     if (!user) {
       setOpenSigninDialog(true);
@@ -85,85 +92,109 @@ const AppHeader = ({ handleDrawerToggle, aiMode, setAiMode }) => {
     <Grid2
       container
       sx={{
-        width: "90%",
-        height: "30px",
+        width: "95%",
+        height: "fit-content",
+        paddingX: isMobile ? "15px" : "20px",
         marginBottom: "5px",
-        marginLeft: "20px",
+        paddingTop: "10px",
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",
+        overflow: "hidden",
+
+        paddingRight: isMobile ? "10px" : "20px",
       }}
     >
-      {isMobile && user && (
-        <Grid2>
-          <IconButton onClick={handleDrawerToggle} sx={{ padding: 0 }}>
-            <i className="bx bx-menu-alt-left" style={{ fontSize: "32px" }}></i>
-          </IconButton>
-        </Grid2>
-      )}
-
       {/* Clickable Logo */}
       <Grid2
         sx={{
-          width: "20",
           display: "flex",
           gap: isMobile ? 1 : 2,
           alignItems: "center",
         }}
       >
+        {isMobile && user && !navOpen && (
+          <Grid2 sx={{}}>
+            <IconButton
+              onClick={() => {
+                toggleNav();
+              }}
+              sx={{ padding: "5px" }}
+            >
+              <MenuRounded
+                sx={{ fontSize: isMobile ? "26px" : "28px", color: "#fff" }}
+              />
+            </IconButton>
+          </Grid2>
+        )}
         <Box
           component="img"
           src={logo}
           alt="AskCho Logo"
           sx={{
-            height: isMobile ? "50px" : "70px",
+            height: isMobile ? "40px" : "50px",
             width: "auto",
             cursor: "pointer",
           }}
-          onClick={() => navigate("/chat")}
+          onClick={() => {
+            setCurrentConversationId(null);
+            navigate("/chat", { replace: false });
+          }}
         />
         {/* AI Mode Dropdown */}
-        <FormControl
-          sx={{ minWidth: 120 }}
-          size="small"
-          disabled={!user}
-          onClick={handleFormControlClick}
-        >
-          <Select
-            value={aiMode}
-            onChange={handleAiModeChange}
-            displayEmpty
-            sx={{
-              color: "#fff",
-              fontSize: isMobile ? "0.8rem" : "1rem",
-              backgroundColor: "#171717",
-              borderRadius: "8px",
-              "& .MuiSelect-icon": { color: "#fff" },
-              "& .MuiOutlinedInput-notchedOutline": {
-                borderColor: "transparent",
-              },
-              "&:hover .MuiOutlinedInput-notchedOutline": {
-                borderColor: "transparent",
-              },
-              "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                borderColor: "transparent",
-              },
-            }}
+        {
+          <FormControl
+            sx={{ minWidth: 120 }}
+            size="small"
+            disabled={!user}
+            onClick={handleFormControlClick}
           >
-            <MenuItem
-              value="chatBuddy"
-              sx={{ fontSize: isMobile ? "0.8rem" : "1rem" }}
+            <Select
+              value={aiMode}
+              onChange={handleAiModeChange}
+              displayEmpty
+              sx={{
+                color: "#fff",
+                fontSize: "14px",
+                backgroundColor: "#171717",
+                borderRadius: "2px",
+                "& .MuiSelect-icon": { color: "#fff" },
+                "& .MuiOutlinedInput-notchedOutline": {
+                  borderColor: "transparent",
+                },
+                "&:hover .MuiOutlinedInput-notchedOutline": {
+                  borderColor: "transparent",
+                },
+                "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                  borderColor: "transparent",
+                },
+              }}
+              disabled={chatOption !== "chat"}
             >
-              Chat Buddy
-            </MenuItem>
-            <MenuItem
-              value="proAssistant"
-              sx={{ fontSize: isMobile ? "0.8rem" : "1rem" }}
-            >
-              Pro Assistant
-            </MenuItem>
-          </Select>
-        </FormControl>
+              <MenuItem
+                value="choBuddy"
+                sx={{
+                  fontSize: isMobile ? "14px" : "14px",
+                  paddingRight: "100px",
+                }}
+              >
+                Cho Buddy
+              </MenuItem>
+              <MenuItem
+                value="studyPal"
+                sx={{ fontSize: isMobile ? "14px" : "14px" }}
+              >
+                Study Pal
+              </MenuItem>
+              <MenuItem
+                value="professional"
+                sx={{ fontSize: isMobile ? "14px" : "14px" }}
+              >
+                Professional
+              </MenuItem>
+            </Select>
+          </FormControl>
+        }
         <Dialog open={openSigninDialog} onClose={handleCloseSigninDialog}>
           <DialogTitle>Sign In Required</DialogTitle>
           <DialogContent>Please sign in to change the AI mode.</DialogContent>
@@ -179,25 +210,45 @@ const AppHeader = ({ handleDrawerToggle, aiMode, setAiMode }) => {
       </Grid2>
 
       {user ? (
-        <Grid2 container sx={{ gap: 2, alignItems: "center" }}>
+        <Grid2
+          container
+          sx={{
+            gap: 2,
+            alignItems: "center",
+            display: "flex",
+            justifyContent: "space-evenly",
+          }}
+        >
           {/* New Chat Icon */}
-          <IconButton sx={{ padding: 0 }} onClick={() => navigate("/chat")}>
-            <AddComment
-              sx={{ fontSize: isMobile ? "26px" : "32px", color: "#fff" }}
+          <IconButton
+            sx={{
+              height: isMobile ? "32px" : "42px",
+              width: isMobile ? "32px" : "42px",
+            }}
+            onClick={() => {
+              resetChatState();
+              navigate("/chat", { replace: false });
+              createNewConversation(user?.uid || null, "chat");
+            }}
+          >
+            <FaPenToSquare
+              style={{ fontSize: isMobile ? "20px" : "22px", color: "#fff" }}
             />
           </IconButton>
 
           {/* Avatar and Menu */}
           <Avatar
             sx={{
-              height: isMobile ? "26px" : "32px",
-              width: isMobile ? "26px" : "32px",
+              height: isMobile ? "32px" : "42px",
+              width: isMobile ? "32px" : "42px",
               cursor: "pointer",
               backgroundColor: "#1a1a1a",
               color: "#fff",
               ":hover": {
                 boxShadow: "0 0 8px rgba(202, 198, 198, 0.3)",
               },
+              fontWeight: "600",
+              fontSize: isMobile ? "0.9rem" : "1.2rem",
             }}
             onClick={handleAvatarClick}
           >
@@ -274,7 +325,7 @@ const AppHeader = ({ handleDrawerToggle, aiMode, setAiMode }) => {
           </Dialog>
         </Grid2>
       ) : (
-        <Grid2 sx={{ display: "flex", gap: 2, height: "100%" }}>
+        <Grid2 sx={{ display: "flex", gap: 2, height: "80%" }}>
           <IconButton sx={{ padding: 0 }} onClick={() => navigate("/chat")}>
             <AddComment
               sx={{ fontSize: isMobile ? "26px" : "32px", color: "#fff" }}

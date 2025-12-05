@@ -7,11 +7,14 @@ import {
   useMediaQuery,
   useTheme,
 } from "@mui/material";
-import React, { useState } from "react";
+import React, { useState, memo } from "react";
 import FeatureCard from "./FeatureCard";
 import { useAuth } from "../hooks/useAuth";
+import useChatStore from "../hooks/chatState";
 
-const WelcomeScreen = ({ name = "", onFeatureClick, input, setInput }) => {
+const WelcomeScreen = ({ name = "", onFeatureClick }) => {
+  const input = useChatStore((state) => state.input);
+
   const [error, setError] = useState(null);
   const { user } = useAuth();
   const theme = useTheme();
@@ -23,7 +26,7 @@ const WelcomeScreen = ({ name = "", onFeatureClick, input, setInput }) => {
     let formatName;
     if (names.length === 1) {
       formatName = names[0].charAt(0).toUpperCase() + names[0].slice(1);
-    } else if (names.length === 2) {
+    } else if (names.length > 1) {
       formatName =
         names[0].charAt(0).toUpperCase() +
         names[0].slice(1) +
@@ -31,6 +34,7 @@ const WelcomeScreen = ({ name = "", onFeatureClick, input, setInput }) => {
         names[1].charAt(0).toUpperCase() +
         names[1].slice(1);
     }
+    console.log(formatName, names);
     return formatName;
   };
 
@@ -44,23 +48,6 @@ const WelcomeScreen = ({ name = "", onFeatureClick, input, setInput }) => {
         flexDirection: "column",
         gap: 2,
         justifyContent: "space-between",
-        "&:hover": {
-          overflowY: "auto",
-        },
-        "&::-webkit-scrollbar": {
-          width: "4px",
-        },
-        "&::-webkit-scrollbar-track": {
-          background: "transparent",
-        },
-        "&::-webkit-scrollbar-thumb": {
-          background: "rgba(153, 153, 153, 0.1)",
-          borderRadius: "4px",
-          maxHeight: "10px",
-        },
-        "&::-webkit-scrollbar-thumb:hover": {
-          background: "#aaa",
-        },
       }}
     >
       <FeatureCard onFeatureClick={onFeatureClick} input={input} />
@@ -94,11 +81,11 @@ const WelcomeScreen = ({ name = "", onFeatureClick, input, setInput }) => {
             textTransform: "none",
           }}
         >
-          How can I help you?
+          How can I help you today?
         </Typography>
       </Box>
     </Container>
   );
 };
 
-export default WelcomeScreen;
+export default memo(WelcomeScreen);

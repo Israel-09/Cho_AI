@@ -14,7 +14,7 @@
   "main": "index.js",
   "dependencies": {
     "@google/genai": "^0.10.0",
-    "axios": "^1.9.0",
+    "axios": "^1.13.2",
     "compromise": "^14.14.4",
     "compromise-dates": "^3.7.1",
     "dotenv": "^16.5.0",

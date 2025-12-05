@@ -85,3 +85,5 @@ exports.createUserAndProfile = functions.https.onCall(async (data, context) => {
 
   return { message: "User and profile created successfully." };
 });
+
+

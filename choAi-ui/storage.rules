@@ -6,5 +6,13 @@ service firebase.storage {
       allow read;
       allow write: if request.auth != null && request.auth.uid == userId;
     }
+    match /users/{userId}/generated/{fileName} {
+      // Allow authenticated users to read their own files
+      allow read;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    match /public/marketing-images/{allFiles=**} {
+      allow read;
+    }
   }
 }

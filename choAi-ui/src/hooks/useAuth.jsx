@@ -16,6 +16,7 @@ export const AuthProvider = ({ children }) => {
     const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
       try {
         setUser(authUser);
+        console.log("Auth state changed, user:", authUser);
       } catch (error) {
         console.error("Auth state change error:", error);
         // Optionally set an error state

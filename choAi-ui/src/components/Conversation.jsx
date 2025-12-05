@@ -1,36 +1,34 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, memo } from "react";
 import {
   Alert,
   Box,
   Container,
-  List,
-  ListItem,
-  ListItemText,
   Snackbar,
   styled,
   IconButton,
   Typography,
   Button,
+  useTheme,
+  CircularProgress,
 } from "@mui/material";
 import {
-  ContentCopy,
-  Refresh,
-  VolumeUp,
-  VolumeOff,
-  ArrowBackIos as ArrowBack,
-  ArrowForwardIos as ArrowForward,
+  ContentCopyRounded as ContentCopy,
+  RefreshRounded as Refresh,
+  VolumeUpRounded as VolumeUp,
+  VolumeOffRounded as VolumeOff,
+  ArrowBackIosRounded as ArrowBack,
+  ArrowForwardIosRounded as ArrowForward,
+  ArrowForwardIos,
+  ArrowBackIos,
 } from "@mui/icons-material";
-import ReactMarkdown from "react-markdown";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
-import remarkGfm from "remark-gfm";
-import remarkMath from "remark-math";
-import rehypeKatex from "rehype-katex";
-import "katex/dist/katex.min.css";
 import ArticleIcon from "@mui/icons-material/Article";
 import { useAuth } from "../hooks/useAuth";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { auth, db } from "../config/firebase";
+import RenderBotResponse from "./RenderBotResponse";
+import RenderGeneratedImages from "./RenderGeneratedImages";
+import useChatStore from "../hooks/chatState";
+import { Riple } from "react-loading-indicators";
 
 // Styled component for links
 const Link = styled("a")(({ theme }) => ({
@@ -44,19 +42,13 @@ const Link = styled("a")(({ theme }) => ({
   rel: "noopener noreferrer",
 }));
 
-const Conversation = ({
-  messages,
-  setMessages,
-  responseHistory,
-  currentResponseIndex,
-  setCurrentResponseIndex,
-  loading,
-  error,
-  setError,
-  onRegenerate,
-}) => {
-  const messagesEndRef = useRef(null);
-  const [animatedMessages, setAnimatedMessages] = useState([]);
+const Conversation = ({ error, setError, onRegenerate }) => {
+  const loadingMessages = useChatStore((state) => state.loadingMessages);
+  const loading = useChatStore((state) => state.loading);
+  const messages = useChatStore((state) => state.messages);
+  const isSending = useChatStore((state) => state.isSending);
+  const botTyping = useChatStore((state) => state.botTyping);
+
   const [speakingMessageId, setSpeakingMessageId] = useState(null);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [snackBarMessage, setSnackBarMessage] = useState(null);
@@ -64,62 +56,18 @@ const Conversation = ({
   const [voices, setVoices] = useState([]);
   const [preferredVoice, setPreferredVoice] = useState("");
   const { user } = useAuth();
+  const theme = useTheme();
+  const isMobile = useTheme().breakpoints.down("md");
 
   // State for modal management
   const [selectedFileForModal, setSelectedFileForModal] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const CodeBlock = styled(Box)(({ theme }) => ({
-    backgroundColor: theme.palette.grey[900],
-    borderRadius: "8px",
-    padding: theme.spacing(1),
-    margin: theme.spacing(2, 0),
-    overflow: "hidden",
-    width: "100%",
-    maxHeight: "80vh",
-    whiteSpace: "pre",
-  }));
+  const messagesEndRef = useRef(null);
 
-  const InlineCode = styled("code")(({ theme }) => ({
-    fontWeight: "bold",
-    backgroundColor: "#282A2C",
-    color: "#bcbcbc",
-    borderRadius: 5,
-    padding: "2px 4px",
-    whiteSpace: "normal",
-    wordBreak: "break-word",
-  }));
-
-  const Table = styled("table")(({ theme }) => ({
-    borderCollapse: "collapse",
-    width: "100%",
-    margin: theme.spacing(2, 0),
-    borderRadius: "13px",
-    "& th, & td": {
-      border: `1px solid ${theme.palette.divider}`,
-      padding: theme.spacing(1),
-      textAlign: "left",
-    },
-    "& th": {
-      backgroundColor: theme.palette.grey[600],
-      fontWeight: "bold",
-      color: "black",
-    },
-  }));
-
-  const Image = styled("img")(({ theme }) => ({
-    maxWidth: "100%",
-    height: "auto",
-    borderRadius: "theme.shape.borderRadius",
-    margin: theme.spacing(1, 0),
-  }));
-
-  const Math = styled("span")(({ theme }) => ({
-    "& .katex": {
-      fontSize: "1rem",
-      lineHeight: "1.5",
-    },
-  }));
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [botTyping]);
 
   // Load available voices for "Read Aloud"
   useEffect(() => {
@@ -135,12 +83,12 @@ const Conversation = ({
   }, []);
 
   const handleCopy = (text) => {
+    console.log("Copying text to clipboard:", messages);
     navigator.clipboard
       .writeText(text)
       .then(() => {
         setSnackBarMessage("Text copied to clipboard");
         setSnackBarOpen(true);
-        console.log("Text copied to clipboard:", text);
       })
       .catch((error) => {
         console.error("Failed to copy text:", error);
@@ -150,6 +98,8 @@ const Conversation = ({
 
   // Fetch user preferences from Firestore
   useEffect(() => {
+    if (!user) return;
+
     const fetchUserData = async () => {
       const userDoc = doc(db, "users", user.uid);
       const docSnap = await getDoc(userDoc);
@@ -199,65 +149,6 @@ const Conversation = ({
     }
   };
 
-  useEffect(() => {
-    // Create a new messages array with the current bot response replaced
-    const lastBotMessageIndex = messages
-      .slice()
-      .reverse()
-      .findIndex((msg) => msg.sender === "bot");
-    const lastBotPosition =
-      lastBotMessageIndex !== -1
-        ? messages.length - 1 - lastBotMessageIndex
-        : -1;
-
-    let updatedMessages = [...messages];
-    if (responseHistory.length > 0 && lastBotPosition !== -1) {
-      // Replace the last bot message with the current response from history
-      updatedMessages = [
-        ...messages.slice(0, lastBotPosition),
-        {
-          ...messages[lastBotPosition],
-          text: responseHistory[currentResponseIndex].text,
-          displayText: responseHistory[currentResponseIndex].text,
-          files: responseHistory[currentResponseIndex].files || [],
-        },
-        ...messages.slice(lastBotPosition + 1),
-      ];
-    }
-
-    // Set animatedMessages with full text immediately for all messages
-    setAnimatedMessages(
-      updatedMessages.map((msg) => ({
-        ...msg,
-        displayText: msg.text, // Always show full text immediately
-      }))
-    );
-  }, [messages, responseHistory, currentResponseIndex]);
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [animatedMessages]);
-
-  const lastBotMessageIndex = messages
-    .slice()
-    .reverse()
-    .findIndex((msg) => msg.sender === "bot");
-
-  const lastBotMessagePosition =
-    lastBotMessageIndex !== -1 ? messages.length - 1 - lastBotMessageIndex : -1;
-
-  const handlePrevious = () => {
-    if (currentResponseIndex > 0) {
-      setCurrentResponseIndex(currentResponseIndex - 1);
-    }
-  };
-
-  const handleNext = () => {
-    if (currentResponseIndex < responseHistory.length - 1) {
-      setCurrentResponseIndex(currentResponseIndex + 1);
-    }
-  };
-
   // Function to open the modal with the selected file
   const openFileModal = (file) => {
     setSelectedFileForModal(file);
@@ -270,390 +161,359 @@ const Conversation = ({
     setIsModalOpen(false);
   };
 
+  const containerRef = useRef(null);
+  const [activeVersion, setActiveVersion] = useState({}); // { userMsgId: versionIndex }
+
+  // Group messages by user turn
+  const groups = [];
+  let currentGroup = null;
+
+  if (Array.isArray(messages)) {
+    messages.forEach((msg) => {
+      if (msg.sender === "user") {
+        if (currentGroup) groups.push(currentGroup);
+        currentGroup = { user: msg, bots: [] };
+      } else if (msg.sender === "bot" && currentGroup) {
+        currentGroup.bots.push(msg);
+      }
+    });
+  }
+
+  if (currentGroup) groups.push(currentGroup);
+
+  // Auto-select latest version for each group
+  useEffect(() => {
+    const newActive = {};
+    groups.forEach((group) => {
+      if (group.bots.length > 0) {
+        const userId = group.user.id;
+        const latestIndex = group.bots.length - 1;
+        if (!(userId in activeVersion) || activeVersion[userId] === undefined) {
+          newActive[userId] = latestIndex;
+        } else {
+          newActive[userId] = Math.min(activeVersion[userId] || 0, latestIndex);
+        }
+      }
+    });
+    setActiveVersion(newActive);
+  }, [messages]);
+
+  useEffect(() => {
+    const newActive = {};
+
+    groups.forEach((group) => {
+      if (group.user?.id && group.bots.length > 0) {
+        newActive[group.user.id] = group.bots.length - 1; // always latest
+      }
+    });
+
+    setActiveVersion(newActive);
+  }, [messages.length]);
+
+  const scrollToBotMessage = (botId) => {
+    const el = document.getElementById(`bot-${botId}`);
+    el?.scrollIntoView({ behavior: "smooth", block: "center" });
+  };
+
+  const handlePrev = (userId) => {
+    setActiveVersion((prev) => ({
+      ...prev,
+      [userId]: Math.max(0, (prev[userId] || 0) - 1),
+    }));
+  };
+
+  const handleNext = (userId, total) => {
+    setActiveVersion((prev) => ({
+      ...prev,
+      [userId]: Math.min(total - 1, (prev[userId] || 0) + 1),
+    }));
+  };
+
+  if (loadingMessages) {
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          marginTop: 4,
+          height: "100%",
+          alignItems: "center",
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
+
   return (
-    <Container
-      maxWidth="md"
+    <Box
       sx={{
-        height: "68vh",
+        height: "100%",
         display: "flex",
         flexDirection: "column",
         padding: 0,
+        overflow: "hidden",
+        width: "100%",
+        top: 0,
+        bottom: 0,
+        right: 0,
+        left: 0,
+        overflowY: "auto",
+
+        "&::-webkit-scrollbar": {
+          width: "4px",
+        },
+        "&::-webkit-scrollbar-track": {
+          background: "transparent",
+        },
+        "&::-webkit-scrollbar-thumb": {
+          background: "#555",
+          borderRadius: "4px",
+          maxHeight: "10px",
+        },
+        "&::-webkit-scrollbar-thumb:hover": {
+          background: "#aaa",
+        },
       }}
     >
-      <Box
+      <Container
+        maxWidth="md"
         sx={{
           width: "100%",
           flex: 1,
-          overflowX: "hidden",
           padding: 2,
-          ":hover": {
-            overflowY: "auto",
-          },
-          "&::-webkit-scrollbar": {
-            width: "4px",
-          },
-          "&::-webkit-scrollbar-track": {
-            background: "transparent",
-          },
-          "&::-webkit-scrollbar-thumb": {
-            background: "#555",
-            borderRadius: "4px",
-            maxHeight: "10px",
-          },
-          "&::-webkit-scrollbar-thumb:hover": {
-            background: "#aaa",
-          },
         }}
       >
-        <List sx={{ padding: 0 }}>
-          {animatedMessages.map((message, index) => (
-            <ListItem
-              key={index}
-              sx={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems:
-                  message.sender === "user" ? "flex-end" : "flex-start",
-                padding: "8px 0",
-                width: "100%",
-              }}
-            >
-              <ListItemText
-                primary={
-                  message.sender === "bot" ? (
-                    <ReactMarkdown
-                      remarkPlugins={[remarkGfm, remarkMath]}
-                      rehypePlugins={[rehypeKatex]}
-                      components={{
-                        code({ node, inline, className, children, ...props }) {
-                          const match = /language-(\w+)/.exec(className || "");
-                          if (!inline && match) {
-                            return (
-                              <CodeBlock>
-                                <SyntaxHighlighter
-                                  style={vscDarkPlus}
-                                  language={match[1]}
-                                  PreTag="div"
-                                  wrapLines={false}
-                                  wrapLongLines={false}
-                                  customStyle={{
-                                    margin: 0,
-                                    padding: 0,
-                                    background: "none",
-                                    whiteSpace: "pre",
-                                    overflowX: "auto",
-                                    overflowY: "auto",
-                                  }}
-                                >
-                                  {String(children).replace(/\n$/, "")}
-                                </SyntaxHighlighter>
-                              </CodeBlock>
-                            );
-                          }
-                          return <InlineCode {...props}>{children}</InlineCode>;
-                        },
-                        table({ node, children, ...props }) {
-                          return <Table {...props}>{children}</Table>;
-                        },
-                        img({ node, ...props }) {
-                          return <Image {...props} />;
-                        },
-                        math({ node, inline, children, ...props }) {
-                          return <Math {...props}>{children}</Math>;
-                        },
-                        inlineMath({ node, children, ...props }) {
-                          return <Math {...props}>{children}</Math>;
-                        },
-                        a({ node, children, ...props }) {
-                          return (
-                            <Link target="_blank" {...props}>
-                              {children}
-                            </Link>
-                          );
-                        },
-                      }}
-                    >
-                      {message.displayText}
-                    </ReactMarkdown>
-                  ) : message.files ? (
-                    <>
-                      <Box
-                        sx={{
-                          display: "flex",
-                          gap: "8px",
-                          marginBottom: "8px",
-                          width: "100%",
-                          justifyContent: "flex-end",
-                          alignItems: "center",
-                        }}
-                      >
-                        {message.files.map((file, fileIndex) => {
-                          return (
-                            <Box
-                              key={fileIndex}
-                              sx={{
-                                height: "70px",
-                                width: "200px",
-                                background: "#282A2C",
-                                borderRadius: "8px",
-                                padding: "8px",
-                                display: "flex",
-                                justifyContent: "center",
-                                alignItems: "center",
-                                cursor: "pointer",
-                                "&:hover": {
-                                  backgroundColor: "#3a3b3c",
-                                },
-                              }}
-                              onClick={() => openFileModal(file)}
-                            >
-                              <Box>
-                                <ArticleIcon sx={{ fontSize: "1.5rem" }} />
-                              </Box>
-                              <Box
-                                width={"80%"}
-                                sx={{ marginLeft: "5px", padding: 0 }}
-                              >
-                                <Typography
-                                  sx={{
-                                    textOverflow: "ellipsis",
-                                    overflow: "hidden",
-                                    whiteSpace: "nowrap",
-                                    padding: 0,
-                                    margin: 0,
-                                  }}
-                                >
-                                  {file.name}
-                                </Typography>
-                                <Typography
-                                  variant="caption"
-                                  sx={{
-                                    fontSize: "0.7rem",
-                                    color: "#aaa",
-                                    padding: 0,
-                                    margin: 0,
-                                  }}
-                                >
-                                  {file.type.split("/")[1]}
-                                </Typography>
-                              </Box>
-                            </Box>
-                          );
-                        })}
-                      </Box>
-                      <Box
-                        sx={{
-                          backgroundColor: "#333",
-                          padding: "8px",
-                          borderRadius: "8px 0px 8px 8px",
-                          width: "fit-content",
-                          float: "right",
-                        }}
-                      >
-                        <Typography sx={{}}>{message.text}</Typography>
-                      </Box>
-                    </>
-                  ) : (
-                    <Typography
-                      sx={{
-                        color: "#fff",
-                        fontSize: "0.9rem",
-                      }}
-                    >
-                      {message.text}
-                    </Typography>
-                  )
-                }
-                sx={{
-                  borderRadius: "8px",
-                  padding: message.sender === "user" ? "8px 12px" : "2px 4px",
-                  maxWidth: "fit-content",
-                  fontSize: "0.9rem",
-                  color: "#efefef",
-                  display: "flex",
-                  gap: "8px",
-                }}
-              />
-              {message.sender === "bot" && (
+        {groups.map((group, groupIndex) => {
+          const userId = group.user?.id;
+          const bots = group.bots;
+          const isLastGroup = groupIndex === groups.length - 1;
+          const activeIndex = userId
+            ? activeVersion[userId] ?? bots.length - 1
+            : bots.length - 1;
+          const activeBot = bots[activeIndex];
+          const hasMultiple = bots.length > 1;
+
+          const showBotActions =
+            activeBot?.status === "completed" || !isLastGroup;
+
+          return (
+            <Box key={groupIndex} sx={{ mb: 4 }}>
+              {group.user && (
                 <Box
                   sx={{
+                    mb: 2,
                     display: "flex",
                     gap: 1,
-                    mt: 0,
-                    alignItems: "center",
+                    flexWrap: "wrap",
+                    width: "100%",
+                    flexDirection: "column",
+                    justifyContent: "flex-end",
+                    alignItems: "flex-end",
+                    overflow: "hidden",
                   }}
                 >
-                  <IconButton
-                    title="Copy"
-                    onClick={() => handleCopy(message.text)}
+                  {group.user.files.map((file, fileIndex) => (
+                    <Box
+                      key={fileIndex}
+                      onClick={() => openFileModal(file)}
+                      sx={{
+                        float: "right",
+                        height: "70px",
+                        width: "200px",
+                        background: "#2d3748",
+                        borderRadius: "8px",
+                        padding: "8px",
+                        display: "flex",
+                        alignItems: "center",
+                        cursor: "pointer",
+                        transition: "all 0.2s",
+                        "&:hover": { backgroundColor: "#4a5568" },
+                      }}
+                    >
+                      <ArticleIcon sx={{ fontSize: "1.5rem", mr: 1 }} />
+                      <Box>
+                        <Typography
+                          variant="body2"
+                          noWrap
+                          sx={{ maxWidth: "140px" }}
+                        >
+                          {file.name}
+                        </Typography>
+                        <Typography variant="caption" color="gray">
+                          {file.type.split("/").pop()}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  ))}
+                  <Box
                     sx={{
-                      color: "#fff",
-                      fontSize: "1.1rem",
-                      "&:hover": {
-                        backgroundColor: "rgba(255, 255, 255, 0.1)",
-                      },
+                      backgroundColor: "#2a2a2a",
+                      padding: "12px 16px",
+                      borderRadius: "12px 4px 12px 12px",
+                      maxWidth: "80%",
+                      ml: "auto",
+                      color: "#e2e8f0",
+                      fontWeight: 400,
                     }}
                   >
-                    <ContentCopy />
-                  </IconButton>
-                  {index === lastBotMessagePosition && (
-                    <>
+                    <Typography variant="body1">{group.user.text}</Typography>
+                  </Box>
+                </Box>
+              )}
+              {botTyping && isLastGroup && (
+                <Box
+                  sx={{
+                    mt: 2,
+                    display: "flex",
+                    alignItems: "flex-start",
+                    justifyContent: "flex-start",
+                  }}
+                >
+                  <Riple
+                    speedPlus="-2"
+                    color="#fff"
+                    size="small"
+                    text=""
+                    textColor=""
+                  />
+                </Box>
+              )}
+              {activeBot ? (
+                <Box>
+                  <RenderBotResponse message={activeBot} />
+                  {activeBot.generatedImages && (
+                    <RenderGeneratedImages
+                      images={activeBot.generatedImages}
+                      status={activeBot.status}
+                    />
+                  )}
+
+                  {/* === ACTION BUTTONS - Only show when response is complete === */}
+                  {showBotActions && (
+                    <Box
+                      sx={{
+                        mt: 1,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                        paddingLeft: "16px",
+                      }}
+                    >
+                      {/* Copy - always available */}
                       <IconButton
-                        title="Regenerate Response"
-                        onClick={() => onRegenerate()}
-                        sx={{
-                          color: "#fff",
-                          fontSize: "1.1rem",
-                          "&:hover": {
-                            backgroundColor: "rgba(255, 255, 255, 0.1)",
-                          },
-                        }}
+                        sx={{ fontSize: isMobile ? "26px" : "32px" }}
+                        onClick={() => handleCopy(activeBot.text || "")}
+                        title="Copy"
                       >
-                        <Refresh />
+                        <ContentCopy />
                       </IconButton>
-                      {responseHistory.length > 1 && (
+
+                      {/* Speak - always available */}
+                      <IconButton
+                        size="small"
+                        sx={{ fontSize: isMobile ? "26px" : "32px" }}
+                        onClick={() =>
+                          toggleReadAloud(activeBot.id, activeBot.text || "")
+                        }
+                        title={
+                          speakingMessageId === activeBot.id
+                            ? "Stop"
+                            : "Read aloud"
+                        }
+                      >
+                        {speakingMessageId === activeBot.id ? (
+                          <VolumeOff />
+                        ) : (
+                          <VolumeUp />
+                        )}
+                      </IconButton>
+
+                      {/* Regenerate - ONLY on the very latest response */}
+                      {isLastGroup && activeIndex === bots.length - 1 && (
+                        <IconButton
+                          sx={{ fontSize: isMobile ? "26px" : "32px" }}
+                          onClick={() => onRegenerate(activeBot.id)}
+                          title="Regenerate"
+                        >
+                          <Refresh />
+                        </IconButton>
+                      )}
+
+                      {/* Version Navigation - only if multiple versions exist */}
+                      {hasMultiple && (
                         <Box
                           sx={{
                             display: "flex",
                             alignItems: "center",
-                            gap: 1,
+                            gap: 0.5,
                           }}
                         >
                           <IconButton
-                            onClick={handlePrevious}
-                            disabled={currentResponseIndex === 0}
-                            sx={{
-                              color:
-                                currentResponseIndex === 0 ? "#555" : "#fff",
-                              fontSize: "1.1rem",
-                              "&:hover": {
-                                backgroundColor:
-                                  currentResponseIndex === 0
-                                    ? "transparent"
-                                    : "rgba(255, 255, 245, 0.1)",
-                              },
-                            }}
+                            size="small"
+                            onClick={() => handlePrev(userId)}
+                            disabled={activeIndex === 0}
                           >
-                            <ArrowBack />
+                            <ArrowBackIos fontSize="small" />
                           </IconButton>
                           <Typography
-                            sx={{ color: "#fff", fontSize: "0.9rem" }}
+                            variant="caption"
+                            sx={{ minWidth: 50, textAlign: "center" }}
                           >
-                            {currentResponseIndex + 1}/{responseHistory.length}
+                            {activeIndex + 1} / {bots.length}
                           </Typography>
                           <IconButton
-                            onClick={handleNext}
-                            disabled={
-                              currentResponseIndex ===
-                              responseHistory.length - 1
-                            }
-                            sx={{
-                              color:
-                                currentResponseIndex ===
-                                responseHistory.length - 1
-                                  ? "#555"
-                                  : "#fff",
-                              fontSize: "1.1rem",
-                              "&:hover": {
-                                backgroundColor:
-                                  currentResponseIndex ===
-                                  responseHistory.length - 1
-                                    ? "transparent"
-                                    : "rgba(255, 255, 255, 0.1)",
-                              },
-                            }}
+                            size="small"
+                            onClick={() => handleNext(userId, bots.length)}
+                            disabled={activeIndex === bots.length - 1}
                           >
-                            <ArrowForward />
+                            <ArrowForwardIos fontSize="small" />
                           </IconButton>
                         </Box>
                       )}
-                    </>
+                    </Box>
                   )}
-                  <IconButton
-                    title={
-                      speakingMessageId === index
-                        ? "Stop Reading"
-                        : "Read Aloud"
-                    }
-                    onClick={() => toggleReadAloud(index, message.text)}
-                    sx={{
-                      color: "#fff",
-                      fontSize: "1.1rem",
-                      "&:hover": {
-                        backgroundColor: "rgba(255, 255, 255, 0.1)",
-                      },
-                    }}
-                  >
-                    {speakingMessageId === index ? <VolumeOff /> : <VolumeUp />}
-                  </IconButton>
                 </Box>
-              )}
-            </ListItem>
-          ))}
-          {loading && (
-            <ListItem
-              sx={{
-                display: "flex",
-                justifyContent: "flex-start",
-                padding: "8px 0",
-              }}
-            >
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  borderRadius: "8px",
-                  padding: "8px 12px",
-                  maxWidth: "fit-content",
-                }}
-              >
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "center",
-                    gap: "4px",
-                  }}
-                  aria-label="Loading response"
-                >
-                  <Box
-                    sx={{
-                      width: "4px",
-                      height: "4px",
-                      backgroundColor: "#888",
-                      borderRadius: "50%",
-                      animation: "pulse 1.2s ease-in-out infinite",
-                      animationDelay: "0s",
-                    }}
-                  />
-                  <Box
-                    sx={{
-                      width: "6px",
-                      height: "6px",
-                      backgroundColor: "#888",
-                      borderRadius: "50%",
-                      animation: "pulse 1.2s ease-in-out infinite",
-                      animationDelay: "0.3s",
-                    }}
-                  />
-                  <Box
-                    sx={{
-                      width: "8px",
-                      height: "8px",
-                      backgroundColor: "#888",
-                      borderRadius: "50%",
-                      animation: "pulse 1.2s ease-in-out infinite",
-                      animationDelay: "0.5s",
-                    }}
-                  />
+              ) : isSending && isLastGroup ? (
+                // Show typing indicator when no activeBot yet but typing
+                <Box sx={{ my: 3 }}>
+                  <Box sx={{ display: "flex", gap: 1 }}>
+                    <Box
+                      sx={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: "50%",
+                        backgroundColor: "#faa86f",
+                        animation: "pulse 1.5s infinite",
+                      }}
+                    />
+                    <Box
+                      sx={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: "50%",
+                        backgroundColor: "#faa86f",
+                        animation: "pulse 1.5s 0.2s infinite",
+                      }}
+                    />
+                    <Box
+                      sx={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: "50%",
+                        backgroundColor: "#faa86f",
+                        animation: "pulse 1.5s 0.4s infinite",
+                      }}
+                    />
+                  </Box>
                 </Box>
-              </Box>
-            </ListItem>
-          )}
-          <div ref={messagesEndRef} />
-        </List>
-      </Box>
+              ) : null}
+            </Box>
+          );
+        })}
+      </Container>
       <Snackbar
-        open={!!error}
+        open={error}
         onClose={() => setError(null)}
         autoHideDuration={3000}
         anchorOrigin={{ vertical: "top", horizontal: "right" }}
@@ -668,21 +528,9 @@ const Conversation = ({
       >
         <Alert severity="success">{snackBarMessage}</Alert>
       </Snackbar>
-    </Container>
+      {console.log("Rendering Conversation component")}
+    </Box>
   );
 };
 
-const styles = `
-  @keyframes pulse {
-    0% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.5); opacity: 0.7; }
-    100% { transform: scale(1); opacity: 1; }
-  }
-`;
-
-const styleSheet = document.createElement("style");
-styleSheet.type = "text/css";
-styleSheet.innerText = styles;
-document.head.appendChild(styleSheet);
-
-export default Conversation;
+export default memo(Conversation);

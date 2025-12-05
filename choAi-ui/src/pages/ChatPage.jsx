@@ -1,19 +1,33 @@
-import { Box, Container, useMediaQuery, useTheme } from "@mui/material";
-import React, { useEffect, useState } from "react";
+import {
+  Box,
+  Container,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Stack,
+  useMediaQuery,
+  useTheme,
+  Button,
+  CircularProgress,
+} from "@mui/material";
+import React, { useRef, useEffect, useState, use } from "react";
 import AppNavbar from "../components/AppNavbar";
 import WelcomeScreen from "../components/WelcomeScreen";
 import { useAuth } from "../hooks/useAuth";
 import AppHeader from "../components/AppHeader";
 import Conversation from "../components/Conversation";
+import CreateImageBackground from "../components/CreateImageBackground";
 import InputSection from "../components/InputSection";
 import { httpsCallable } from "firebase/functions";
-import { functions } from "../config/firebase";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { storage } from "../config/firebase";
+import { auth, functions, db } from "../config/firebase";
+
+import { doc, updateDoc } from "firebase/firestore";
 
 import {
   sendGeminiMessage,
-  initializeConversation,
+  createNewConversation,
+  startGuestSession,
 } from "../utils/chatResponse";
 import {
   Navigate,
@@ -21,366 +35,317 @@ import {
   useNavigate,
   useParams,
 } from "react-router-dom";
-
-const createConversation = httpsCallable(functions, "createConversation");
-const getConversations = httpsCallable(functions, "getConversations");
-const getConversation = httpsCallable(functions, "getConversation");
+import useChatStore from "../hooks/chatState";
+import ResearchAssistantPage from "./ResearchAssistantPage";
 
 const ChatPage = () => {
+  const chatOption = useChatStore((state) => state.chatOption);
+  const aiMode = useChatStore((state) => state.aiMode);
+  const currentConversationId = useChatStore(
+    (state) => state.currentConversationId
+  );
+  const setCurrentConversationId = useChatStore(
+    (state) => state.setCurrentConversationId
+  );
+  const setAiMode = useChatStore((state) => state.setAiMode);
+  const setLoading = useChatStore((state) => state.setLoading);
+  const loading = useChatStore((state) => state.loading);
+  const messages = useChatStore((state) => state.messages);
+  const fetchMessages = useChatStore((state) => state.fetchMessages);
+  const fetchConversations = useChatStore((state) => state.fetchConversations);
+  const createConversation = useChatStore((state) => state.createConversation);
+  const setError = useChatStore((state) => state.setError);
+  const error = useChatStore((state) => state.error);
+
   const { conversationId } = useParams();
-  const [aiMode, setAiMode] = useState(() => {
-    const storedMode = localStorage.getItem("aiMode");
-    return storedMode ? JSON.parse(storedMode) : "proAssistant";
-  });
-  const [input, setInput] = useState("");
-  const [messages, setMessages] = useState([]);
-  const [responseHistory, setResponseHistory] = useState([]); // Store bot responses for the last user message
-  const [currentResponseIndex, setCurrentResponseIndex] = useState(0); // Track current response
-  const [isChatting, setIsChatting] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [conversations, setConversations] = useState(["no conversations yet"]);
-  const [newConversationTitle, setNewConversationTitle] = useState("");
-  const [conversationMetadata, setConversationMetadata] = useState(null);
-  const [currentConversationId, setCurrentConversationId] =
-    useState(conversationId);
-  const [searchSelected, setSearchSelected] = useState(false);
-  const [navOpen, setNavOpen] = useState(false);
-  const [isSending, setIsSending] = useState(false);
+  const [isRegenerating, setIsRegenerating] = useState(false);
+  const hasMessages = messages && messages.length > 0;
+
+  // fetch route options
+
   const navigate = useNavigate();
   const location = useLocation();
 
   const theme = useTheme();
   const minWidth = 80;
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { name } = location.state || {};
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+  const messagesEndRef = useRef(null);
 
-  const handleSend = async (value, files = []) => {
-    if (!value.trim()) return;
-    setResponseHistory([]);
-    setCurrentResponseIndex(0);
+  const handleRegenerate = async (failedMessageId) => {
+    if (isRegenerating) return; // Prevent multiple clicks
+
+    setIsRegenerating(true);
+    setError(null);
+
+    const failedMessageRef = doc(
+      db,
+      "conversations",
+      currentConversationId,
+      "messages",
+      failedMessageId
+    );
+    await updateDoc(failedMessageRef, { status: "regenerating" });
+
+    const userMessageBefore = messages
+      .slice(
+        0,
+        messages.findIndex((msg) => msg.id === failedMessageId)
+      )
+      .reverse()
+      .find((msg) => msg.sender === "user");
+
+    console.log("Found previous user message:", userMessageBefore);
+
+    if (!userMessageBefore) {
+      setError("No previous user message found for regeneration.");
+      setIsRegenerating(false);
+      return;
+    }
+
     try {
-      setIsChatting(true);
       await sendGeminiMessage(
-        value,
-        setInput,
-        messages,
-        setMessages,
+        userMessageBefore.text,
         setLoading,
         aiMode,
         currentConversationId,
-        (newConversationId, title) => {
-          setCurrentConversationId(newConversationId);
-          setConversations((prev) => [
-            { id: newConversationId, title: title || "New Conversation" },
-            ...prev,
-          ]);
-          navigate(`/chat/${newConversationId}`);
-        },
-        false,
-        setResponseHistory,
-        files,
-        searchSelected
+        true,
+        [],
+        chatOption,
+        failedMessageId
       );
     } catch (error) {
-      console.error("Error sending message:", error);
-      setError("Failed to send message");
+      console.error("Error regenerating message:", error);
+      setError("Failed to regenerate message");
+    } finally {
+      setIsRegenerating(false);
     }
   };
 
-  const handleFileUpload = async (files) => {
-    if (!user) return;
-
-    const uploadedFiles = await Promise.all(
-      files.map(async (file) => {
-        const storageRef = ref(storage, `users/${user.uid}/files/${file.name}`);
-        await uploadBytes(storageRef, file);
-        const downloadURL = await getDownloadURL(storageRef);
-        console.log("File uploaded:", file.name, downloadURL);
-        return { name: file.name, url: downloadURL, type: file.type };
-      })
-    );
-
-    return uploadedFiles;
-  };
-
   useEffect(() => {
-    setCurrentConversationId(conversationId || null);
-  }, [conversationId]);
-
-  useEffect(() => {
-    localStorage.setItem("aiMode", JSON.stringify(aiMode));
-  }, [aiMode]);
-
-  useEffect(() => {
-    if (user && conversationId) {
-      getConversation({ conversationId })
-        .then((result) => {
-          const { conversation } = result.data;
-          setConversationMetadata({
-            id: conversation.id,
-            title: conversation.title,
-            createdAt: conversation.createdAt,
-          });
-          setMessages(conversation.messages || []);
-          console.log("ChatPage: Fetched conversation", conversation.messages);
-          const lastBotMessage = conversation.messages
-            ?.slice()
-            .reverse()
-            .find((msg) => msg.sender === "bot");
-          if (lastBotMessage) {
-            setResponseHistory([lastBotMessage]);
-            setCurrentResponseIndex(0);
-          }
-        })
-
-        .catch((error) => {
-          console.error("Error fetching conversation:", error);
-          setError(error.message || "Failed to load conversation");
-          setMessages([]);
-        });
-    } else {
-      setConversationMetadata(null);
-      setMessages([]);
-      console.log("ChatPage: No conversation fetched", {
-        user: user?.uid || "none",
-        conversationId,
-      });
+    if (conversationId) {
+      setCurrentConversationId(conversationId);
+      fetchMessages(conversationId);
+      return;
     }
-  }, [user, conversationId, conversations]);
-
-  useEffect(() => {
-    let unsubscribe = () => {};
-    if (user && conversationId) {
-      unsubscribe = initializeConversation(
-        user.uid,
-        conversationId,
-        setMessages,
-        setError
-      );
-    } else {
-      setMessages([]);
+    if (!currentConversationId) {
+      console.log("No currentConversationId, creating new conversation");
+      createConversation(user ? user.uid : null);
+      return;
     }
-    return () => unsubscribe();
-  }, [user, conversationId]);
+  }, [conversationId, user]);
 
   useEffect(() => {
     if (user) {
-      getConversations()
-        .then((result) => {
-          setConversations(result.data.conversations);
-        })
-        .catch((error) => {
-          console.error("Error fetching conversations:", error);
-          setConversations(["no conversations yet"]);
-        });
-    } else {
-      setConversations(["no conversations yet"]);
-      console.log("ChatPage: No user, clearing conversations");
+      fetchConversations(user.uid);
     }
-    console.log(conversations);
   }, [user]);
 
-  const handleCreateConversation = async () => {
-    if (!user) {
-      setError("You must be logged in to create a conversation");
-      return;
-    }
-    try {
-      const result = await createConversation({
-        title: newConversationTitle || "New Conversation",
-      });
-      const { conversationId, title } = result.data;
-      setConversations((prev) => [
-        {
-          id: conversationId,
-          title: newConversationTitle || "New Conversation",
-        },
-        ...prev,
-      ]);
-      setNewConversationTitle("");
-      navigate(`/chat/${conversationId}`);
-    } catch (error) {
-      console.error("Error creating conversation:", error);
-      setError("Failed to create conversation");
+  const handleAiModeChange = async (event) => {
+    const newMode = event.target.value;
+    setAiMode(newMode);
+    // update the conversation record with the new mode
+    if (currentConversationId) {
+      const conversationRef = doc(db, "conversations", currentConversationId);
+      await updateDoc(conversationRef, { aiMode: newMode });
     }
   };
 
-  const handleRegenerate = async () => {
-    if (isSending) return;
-    setLoading(true);
-
-    const lastBotMessageIndex = messages
-      .slice()
-      .reverse()
-      .findIndex((msg) => msg.sender === "bot");
-    if (lastBotMessageIndex === -1) {
-      setLoading(false);
-      return;
-    }
-
-    const lastBotPosition = messages.length - 1 - lastBotMessageIndex;
-    if (
-      lastBotPosition === 0 ||
-      messages[lastBotPosition - 1].sender !== "user"
-    ) {
-      setLoading(false);
-      return;
-    }
-
-    const lastUserMessage = messages[lastBotPosition - 1];
-    setIsSending(true);
-
-    try {
-      await sendGeminiMessage(
-        lastUserMessage.text || "",
-        setInput,
-        messages,
-        setMessages,
-        setLoading,
-        aiMode,
-        currentConversationId,
-        setCurrentConversationId,
-        true, // isRegenerate
-        setResponseHistory,
-        lastUserMessage.files || [],
-        searchSelected
-      );
-      setCurrentResponseIndex((prev) => responseHistory.length); // Move to the latest response
-    } catch (error) {
-      setError(`Failed to regenerate response: ${error.message}`);
-    } finally {
-      setIsSending(false);
-      setLoading(false);
-    }
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const handleStartConversation = (firstInput) => {
-    if (firstInput.trim()) {
-      handleSend(firstInput);
-    }
-  };
-
-  const handleDrawerToggle = () => {
-    setNavOpen(!navOpen);
-  };
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   if (user && !user.emailVerified) {
     return <Navigate to="/verify-email" />;
+  }
+
+  useEffect(() => {
+    console.log("Chat option changed:", chatOption);
+    console.log("has messages:", hasMessages);
+  }, [chatOption]);
+
+  if (authLoading) {
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+          width: "100vw",
+          overflow: "hidden",
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    );
   }
 
   return (
     <Box
       sx={{
         display: "flex",
-        height: "100vh",
-        flexDirection: "row",
+        height: isMobile ? "100dvh" : "100vh",
         width: "100vw",
+        overflow: "hidden",
       }}
     >
       <Box>
-        {(!isMobile || navOpen) && user && (
-          <AppNavbar
-            conversations={conversations}
-            conversationId={conversationId}
-            handleDrawerToggle={handleDrawerToggle}
-            navOpen={navOpen}
-            setNavOpen={setNavOpen}
-          />
-        )}
+        <AppNavbar />
       </Box>
-      <Box
+      <Stack
         sx={{
-          flex: 1,
+          height: "100%",
+          width: "100%",
           display: "flex",
           flexDirection: "column",
-          alignItems: "center",
-          width: "90vw",
-          overflowY: "auto",
-          paddingTop: 2,
         }}
       >
-        <AppHeader
-          handleDrawerToggle={handleDrawerToggle}
-          aiMode={aiMode}
-          setAiMode={setAiMode}
-        />
-        <Container
+        <Stack
           sx={{
-            flex: 1,
-            direction: "rtl",
-            paddingTop: theme.spacing(1),
-            boxSizing: "border-box",
-
-            "> *": {
-              direction: "ltr",
-              textAlign: "center",
-            },
+            height: isMobile ? "60px" : "70px",
             width: "100%",
-            height: "90vh",
-            position: "relative",
-            display: "flex",
-            flexDirection: "column",
             alignItems: "center",
-            justifyContent: isChatting,
+            justifyContent: "center",
           }}
         >
-          <Container
-            minWidth="md"
-            maxWidth="lg"
-            fixed
-            sx={{
-              left: minWidth,
-              height: "100%",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              paddingLeft: 0,
-              justifyContent: "center",
-            }}
-          >
-            {isChatting || conversationId ? (
+          <AppHeader
+            aiMode={aiMode}
+            handleAiModeChange={handleAiModeChange}
+            setCurrentConversationId={setCurrentConversationId}
+          />
+        </Stack>
+        {hasMessages ? (
+          <>
+            <Stack
+              sx={{
+                flexGrow: 1,
+                overflow: "hidden",
+                paddingTop: isMobile ? 1 : 2,
+                paddingBottom: "5px",
+                width: "100%",
+                height: "100%",
+
+                maskImage:
+                  "linear-gradient(to bottom, black 90%, transparent 100%)",
+              }}
+            >
               <Conversation
-                messages={messages}
-                setMessages={setMessages}
-                responseHistory={responseHistory}
-                currentResponseIndex={currentResponseIndex}
-                setCurrentResponseIndex={setCurrentResponseIndex}
                 loading={loading}
                 error={error}
                 setError={setError}
                 onRegenerate={handleRegenerate}
               />
-            ) : (
-              <WelcomeScreen
-                name={name}
-                onStartConversation={handleStartConversation}
-                onFeatureClick={handleSend}
-                input={setInput}
-              />
-            )}
-            <Box
+            </Stack>
+            <Stack
               sx={{
-                display: "flex",
-                justifyContent: "center",
                 width: "100%",
-                height: "20%",
+                alignItems: "center",
+                position: "relative",
+                marginBottom: isMobile ? 2 : 3,
               }}
             >
-              <InputSection
-                value={input}
-                setInput={setInput}
-                onChange={(e) => setInput(e.target.value)}
-                onEnter={handleSend}
-                onFileUpload={handleFileUpload}
-                searchSelected={searchSelected}
-                setSearchSelected={setSearchSelected}
-              />
-            </Box>
-          </Container>
-        </Container>
-      </Box>
+              <InputSection />
+            </Stack>
+          </>
+        ) : (
+          <>
+            {chatOption === "imageGen" ? (
+              <Stack
+                sx={{
+                  flexGrow: 1,
+                  width: "100%",
+                  paddingX: isMobile ? "10px" : 3,
+                  paddingTop: isMobile ? 1 : 2,
+                  paddingBottom: isMobile ? 8 : 4,
+                  alignItems: "center",
+                  position: "relative",
+                  maskImage:
+                    "linear-gradient(to bottom, black 90%, transparent 100%)",
+
+                  overflowY: "auto",
+                  overflowX: "hidden",
+                  "&::-webkit-scrollbar": {
+                    width: "4px",
+                  },
+                  "&::-webkit-scrollbar-track": {
+                    background: "transparent",
+                  },
+                  "&::-webkit-scrollbar-thumb": {
+                    background: "#555",
+                    borderRadius: "4px",
+                    maxHeight: "10px",
+                  },
+                  "&::-webkit-scrollbar-thumb:hover": {
+                    background: "#aaa",
+                  },
+                }}
+              >
+                <Box sx={{ width: "100%" }}>
+                  <CreateImageBackground />
+                </Box>
+              </Stack>
+            ) : chatOption === "researchAssistant" ? (
+              <Stack
+                sx={{
+                  flexGrow: 1,
+                  width: "100%",
+                  paddingX: isMobile ? "10px" : 3,
+                  paddingTop: isMobile ? 1 : 2,
+                  paddingBottom: isMobile ? 8 : 4,
+                  alignItems: "center",
+                  position: "relative",
+                }}
+              >
+                <ResearchAssistantPage />
+              </Stack>
+            ) : (
+              <Stack
+                sx={{
+                  flexGrow: 1,
+                  width: "100%",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  overflowY: "auto",
+                  overflowX: "hidden",
+                  "&::-webkit-scrollbar": {
+                    width: "4px",
+                  },
+                  "&::-webkit-scrollbar-track": {
+                    background: "transparent",
+                  },
+                  "&::-webkit-scrollbar-thumb": {
+                    background: "#555",
+                    borderRadius: "4px",
+                    maxHeight: "10px",
+                  },
+                  "&::-webkit-scrollbar-thumb:hover": {
+                    background: "#aaa",
+                  },
+                }}
+              >
+                <WelcomeScreen name={name} />
+              </Stack>
+            )}
+            <Stack
+              sx={{
+                width: "100%",
+                alignItems: "center",
+                position: "relative",
+                marginBottom: isMobile ? 2 : 3,
+                marginTop: 2,
+              }}
+            >
+              <InputSection />
+            </Stack>
+          </>
+        )}
+      </Stack>
     </Box>
   );
 };
