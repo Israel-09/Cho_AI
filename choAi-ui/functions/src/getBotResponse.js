@@ -180,25 +180,37 @@ exports.getBotResponse = functions.https.onCall(async (data, context) => {
     } else if (intent === "IMAGE" || chatOption === "imageGen") {
       await assistantRef.update({ status: "processing", generatedImages: [] });
 
-      const response = await genAI.models.generateImages({
-        model: "imagen-4.0-generate-001",
-        prompt: [content],
+      const response = await genAI.models.generateContent({
+        model: "gemini-2.5-flash-image",
+        contents: content,
         history: history,
         config: {
           numberOfImages: 1,
           imageSize: "1K",
         },
       });
+      let downloadURL = "";
 
-      const generatedImage = response.generatedImages;
+      for (const part of response.candidates[0].content.parts) {
+        if (part.text) {
+          await assistantRef.update({ text: part.text });
+        } else if (part.inlineData) {
+          const imageBytes = part.inlineData.data;
+          const buffer = Buffer.from(imageBytes, "base64");
+          const fileName = `images-${conversationId}_${Date.now()}.png`;
+          const file = bucket.file(`users/${userId}/generated/${fileName}`);
+          await file.save(buffer, { contentType: "image/png" });
+          downloadURL = await getDownloadURL(file);
+        }
+      }
       console.log(response);
 
-      let imgBytes = generatedImage[0].image.imageBytes;
-      const buffer = Buffer.from(imgBytes, "base64");
-      const fileName = `images-${conversationId}_${Date.now()}.png`;
-      const file = bucket.file(`users/${userId}/generated/${fileName}`);
-      await file.save(buffer, { contentType: "image/png" });
-      const downloadURL = await getDownloadURL(file);
+      // let imgBytes = generatedImage[0].image.imageBytes;
+      // const buffer = Buffer.from(imgBytes, "base64");
+      // const fileName = `images-${conversationId}_${Date.now()}.png`;
+      // const file = bucket.file(`users/${userId}/generated/${fileName}`);
+      // await file.save(buffer, { contentType: "image/png" });
+      // const downloadURL = await getDownloadURL(file);
 
       await assistantRef.update({
         status: "complete",

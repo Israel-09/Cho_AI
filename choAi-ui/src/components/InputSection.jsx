@@ -69,8 +69,9 @@ const InputSection = ({}) => {
   const currentConversationId = useChatStore(
     (state) => state.currentConversationId
   );
+  const resetChatState = useChatStore((state) => state.resetChatState);
   const createConversation = useChatStore((state) => state.createConversation);
-  const updateChatOption = useChatStore((state) => state.setChatOption);
+  const updateChatOption = useChatStore((state) => state.updateChatOption);
   const [showNewConversationDialog, setShowNewConversationDialog] =
     useState(false);
   const loadingMesages = useChatStore((state) => state.loadingMessages);
@@ -97,8 +98,10 @@ const InputSection = ({}) => {
 
   const chatOptionChangeConfirm = async () => {
     setShowNewConversationDialog(false);
-
-    updateChatOption(tempChatOption);
+    resetChatState();
+    createConversation(user?.uid || null, tempChatOption).then(() => {
+      navigate("/chat", { replace: false });
+    });
   };
 
   const handleChatOptionChange = (option) => {
@@ -107,7 +110,12 @@ const InputSection = ({}) => {
     if (option !== "chat" && isChatting) {
       setShowNewConversationDialog(true);
     } else {
-      updateChatOption(option);
+      console.log("we got here oooo//!!!", {
+        option,
+        chatOption,
+        currentConversationId,
+      });
+      updateChatOption(currentConversationId, option);
     }
   };
 
@@ -134,7 +142,7 @@ const InputSection = ({}) => {
         navigate(`/chat/${convId}`, { replace: true });
       }
 
-      setInput(""); 
+      setInput("");
 
       await sendGeminiMessage(
         value,
@@ -156,7 +164,6 @@ const InputSection = ({}) => {
     }
     setLoading(false);
     setIsSending(false);
-
   };
 
   const handleMenuClick = (event) => {
@@ -655,7 +662,7 @@ const InputSection = ({}) => {
             {isSupported && (
               <IconButton
                 title={input ? "Send" : "Use voice input"}
-                disabled={loadingMesages || !currentConversationId}
+                disabled={!currentConversationId}
                 sx={{
                   fontSize: "1.6rem",
                   color: isRecording ? "#ef0909" : "#fff",
@@ -689,7 +696,6 @@ const InputSection = ({}) => {
       <NewChatPrompt
         showNewConversationDialog={showNewConversationDialog}
         setShowNewConversationDialog={setShowNewConversationDialog}
-        setChatOption={updateChatOption}
         chatOptionChangeConfirm={chatOptionChangeConfirm}
       />
     </Grid2>

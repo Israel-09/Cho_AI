@@ -13,8 +13,6 @@ import { useAuth } from "../hooks/useAuth";
 import useChatStore from "../hooks/chatState";
 
 const WelcomeScreen = ({ name = "", onFeatureClick }) => {
-  const input = useChatStore((state) => state.input);
-
   const [error, setError] = useState(null);
   const { user } = useAuth();
   const theme = useTheme();
@@ -50,7 +48,7 @@ const WelcomeScreen = ({ name = "", onFeatureClick }) => {
         justifyContent: "space-between",
       }}
     >
-      <FeatureCard onFeatureClick={onFeatureClick} input={input} />
+      <FeatureCard onFeatureClick={onFeatureClick} />
       {/* header section */}
       <Box>
         <Typography

@@ -25,7 +25,6 @@ import logo from "../assets/logo.png"; // Adjust the path as necessary
 import { useNavigate } from "react-router-dom";
 import { AddComment, MenuRounded } from "@mui/icons-material";
 import useChatStore from "../hooks/chatState";
-import { createNewConversation } from "../utils/chatResponse";
 
 const AppHeader = ({
   aiMode,
@@ -38,6 +37,7 @@ const AppHeader = ({
   const toggleNav = useChatStore((state) => state.toggleNav);
   const navOpen = useChatStore((state) => state.navOpen);
   const resetChatState = useChatStore((state) => state.resetChatState);
+  const createConversation = useChatStore((state) => state.createConversation);
   const chatOption = useChatStore((state) => state.chatOption);
   const [logoutConfirm, setLogoutConfirm] = useState(false);
   const [openSigninDialog, setOpenSigninDialog] = useState(false);
@@ -228,7 +228,7 @@ const AppHeader = ({
             onClick={() => {
               resetChatState();
               navigate("/chat", { replace: false });
-              createNewConversation(user?.uid || null, "chat");
+              createConversation(user?.uid || null, "chat");
             }}
           >
             <FaPenToSquare

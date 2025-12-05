@@ -40,6 +40,7 @@ const RenderGeneratedImages = ({ images, status }) => {
         my: 2,
         overflow: "hidden",
         paddingLeft: isMobile ? "22px" : "22px",
+        scrollBehavior: "smooth",
       }}
     >
       {status === "processing" ? (
@@ -51,8 +52,8 @@ const RenderGeneratedImages = ({ images, status }) => {
             component="img"
             src={image}
             alt={`Generated ${index}`}
-            width="400px"
-            height="400px"
+            width={isMobile ? "250px" : "300px"}
+            height={isMobile ? "350px" : "400px"}
             onClick={() => handleImageClick(image)} // Pass the image URL to the handler
             sx={{ cursor: "pointer", objectFit: "cover", borderRadius: "13px" }}
           />
@@ -115,7 +116,7 @@ const RenderGeneratedImages = ({ images, status }) => {
                   document.body.removeChild(link);
                 }
               }}
-            />
+            /> 
           </Box>
           <Box
             sx={{

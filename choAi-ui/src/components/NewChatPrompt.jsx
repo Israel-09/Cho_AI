@@ -6,13 +6,18 @@ import {
   DialogTitle,
 } from "@mui/material";
 import React from "react";
+import useChatStore from "../hooks/chatState";
 
 const NewChatPrompt = ({
   showNewConversationDialog,
   setShowNewConversationDialog,
-  setChatOption,
   chatOptionChangeConfirm,
 }) => {
+  const updateChatOption = useChatStore((state) => state.updateChatOption);
+  const currentConversationId = useChatStore(
+    (state) => state.currentConversationId
+  );
+
   return (
     <Dialog
       open={showNewConversationDialog}
@@ -34,7 +39,6 @@ const NewChatPrompt = ({
       <DialogActions>
         <Button
           onClick={() => {
-            setChatOption("");
             setShowNewConversationDialog(false);
           }}
           color="error"

@@ -186,6 +186,7 @@ const useChatStore = create((set, get) => ({
   },
 
   updateChatOption: async (currentConversationId, option) => {
+    console.log("Updating chat option:", { currentConversationId, option });
     set({ chatOption: option });
     if (currentConversationId) {
       const conversationRef = doc(db, "conversations", currentConversationId);
